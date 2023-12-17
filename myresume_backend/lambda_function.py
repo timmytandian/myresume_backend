@@ -1,0 +1,84 @@
+from os import environ
+from typing import Any, Dict
+from boto3 import resource
+from aws_lambda_powertools.utilities.data_classes import APIGatewayProxyEvent
+from aws_lambda_powertools.utilities.typing import LambdaContext
+from aws_lambda_powertools.utilities.validation import validator
+
+# for my test
+import json
+
+# Reference: 
+# github: https://github.com/aws-samples/serverless-test-samples/blob/main/python-test-samples/lambda-mock/src/sample_lambda/app.py
+# AWS blog: https://aws.amazon.com/blogs/devops/unit-testing-aws-lambda-with-python-and-mock-aws-services/
+
+# Import the schema for the Lambda Powertools Validator
+from schemas import INPUT_SCHEMA, OUTPUT_SCHEMA
+
+# [1] Globally scoped resources
+# Initialize the resources once per Lambda execution environment by using global scope.
+_LAMBDA_DYNAMODB_RESOURCE = { "resource" : resource('dynamodb'), 
+                              "table_name" : environ.get("DYNAMODB_TABLE_NAME","NONE") }
+
+# [2] Define a Global class an AWS Resource: Amazon DynamoDB. 
+class LambdaDynamoDBClass:
+    """
+    AWS DynamoDB Resource Class
+    """
+    def __init__(self, lambda_dynamodb_resource):
+        """
+        Initialize a DynamoDB Resource
+        """
+        self.resource = lambda_dynamodb_resource["resource"]
+        self.table_name = lambda_dynamodb_resource["table_name"]
+        self.table = self.resource.Table(self.table_name)
+
+# [4] Validate the event schema and return schema using Lambda Power Tools
+@validator(inbound_schema=INPUT_SCHEMA, outbound_schema=OUTPUT_SCHEMA)
+def lambda_handler(event: APIGatewayProxyEvent,context: LambdaContext) -> Dict[str, Any]:
+    """
+    Lambda Entry Point
+    """
+    # [5] Use the Global variables to optimize AWS resource connections
+    global _LAMBDA_DYNAMODB_RESOURCE
+
+    dynamodb_resource_class = LambdaDynamoDBClass(_LAMBDA_DYNAMODB_RESOURCE)
+    return getVisitorsCount(dynamo_db=dynamodb_resource_class,
+                            page_id=event["pathParameters"]["page-id"])
+
+def getVisitorsCount( dynamo_db: LambdaDynamoDBClass,
+                      page_id: str) -> dict:
+    """
+    Given a page id, return page's visitors count which is retrieved from
+     DynamoDB.
+    """
+
+    status_code = 200
+    body = "0" # a placeholder
+    #print(page_id)
+    try:         
+        # [7] Use the passed environment class for AWS resource access - DynamoDB
+        visitorCount = int(dynamo_db.table.get_item(Key={"pkey_uuid": page_id})["Item"]["visit_count"])
+        body = f"{visitorCount}"
+    except KeyError as index_error:
+        body = "Not Found: " + str(index_error)
+        status_code = 404
+    except Exception as other_error:               
+        body = "ERROR: " + str(other_error)
+        status_code = 500
+    finally:
+        print(body)
+        return {"statusCode": status_code, "body" : body }
+
+
+def main():
+    # Read event from json for testing
+    eventFileName = f"tests/events/sampleEvent.json"
+    with open(eventFileName,"r",encoding='UTF-8') as fileHandle:
+        event = json.load(fileHandle)
+    
+    return lambda_handler(event, None)
+
+
+if __name__ == "__main__":
+    main()
