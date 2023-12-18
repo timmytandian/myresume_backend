@@ -1,0 +1,9 @@
+# Byte-compiled / optimized / DLL files
+myresume_backend/__pycache__/
+myresume_backend/*.py[cod]
+myresume_backend/*$py.class
+tests/__pycache__/
+tests/unit/__pycache__/
+
+# VS Code debugging things
+.vscode/
