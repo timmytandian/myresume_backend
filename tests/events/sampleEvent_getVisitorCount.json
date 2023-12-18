@@ -1,7 +1,7 @@
 {
     "version":"2.0",
     "routeKey":"GET /counts/{page-id}",
-    "rawPath":"/dev/counts/6632d5b4-5655-4c48-b7b6-071d5823c887",
+    "rawPath":"/dev/counts/6632d5b4-5655-4c48-b7b6-071d5823c888",
     "rawQueryString":"func=getVisitorCount",
     "headers":{
        "accept":"*/*",
@@ -26,7 +26,7 @@
        "domainPrefix":"3ijz5acnoe",
        "http":{
           "method":"GET",
-          "path":"/dev/counts/6632d5b4-5655-4c48-b7b6-071d5823c887",
+          "path":"/dev/counts/6632d5b4-5655-4c48-b7b6-071d5823c888",
           "protocol":"HTTP/1.1",
           "sourceIp":"126.29.55.95",
           "userAgent":"PostmanRuntime/7.35.0"
@@ -38,7 +38,7 @@
        "timeEpoch":1700721527682
     },
     "pathParameters":{
-       "page-id":"6632d5b4-5655-4c48-b7b6-071d5823c887"
+       "page-id":"6632d5b4-5655-4c48-b7b6-071d5823c888"
     },
     "isBase64Encoded":false
  }
