@@ -102,7 +102,7 @@ class TestLambdaFunction(TestCase):
     # [13] Patch the Global Class and any function calls
     @patch("myresume_backend.lambda_function.LambdaDynamoDBClass")
     @patch("myresume_backend.lambda_function.getVisitorsCount")
-    def test_lambda_handler_valid_event_returns_200(self,
+    def test_lambda_handler_getVisitorsCount_valid_event_returns_200(self,
                             patch_getVisitorsCount : MagicMock,
                             patch_lambda_dynamodb_class : MagicMock
                             ):
@@ -119,7 +119,7 @@ class TestLambdaFunction(TestCase):
         patch_getVisitorsCount.return_value = return_value_200
 
         # [15] Run Test using a test event from /tests/events/*.json
-        test_event = self.load_sample_event_from_file("sampleEvent")
+        test_event = self.load_sample_event_from_file("sampleEvent_getVisitorCount")
         test_return_value = lambda_handler(event=test_event, context=None)
 
         # [16] Validate the function was called with the mocked globals
@@ -130,6 +130,37 @@ class TestLambdaFunction(TestCase):
 
         self.assertEqual(test_return_value, return_value_200)
 
+
+    # [17] Patch the Global Class and any function calls
+    @patch("myresume_backend.lambda_function.LambdaDynamoDBClass")
+    @patch("myresume_backend.lambda_function.addOneVisitorCount")
+    def test_lambda_handler_addOneVisitorCount_valid_event_returns_200(self,
+                            patch_addOneVisitorCount : MagicMock,
+                            patch_lambda_dynamodb_class : MagicMock
+                            ):
+        """
+        Verify 1) the event is parsed, 2) AWS resources are passed, 
+        3) the addOneVisitorCount function is called, and 
+        4) a status code 200 is returned.
+        """
+
+        # [18] Test setup - Return a mock for the global variables and resources
+        patch_lambda_dynamodb_class.return_value = self.mocked_dynamodb_class
+        
+        return_value_200 = {"statusCode" : 200, "body":"OK"}
+        patch_addOneVisitorCount.return_value = return_value_200
+
+        # [19] Run Test using a test event from /tests/events/*.json
+        test_event = self.load_sample_event_from_file("sampleEvent_addOneVisitorCount")
+        test_return_value = lambda_handler(event=test_event, context=None)
+
+        # [20] Validate the function was called with the mocked globals
+        # and event values
+        patch_addOneVisitorCount.assert_called_once_with(
+                                        dynamo_db=self.mocked_dynamodb_class,
+                                        page_id=test_event["pathParameters"]["page-id"])
+
+        self.assertEqual(test_return_value, return_value_200)
 
     def tearDown(self) -> None:
         # [14] Remove (mocked!) DynamoDB Table
