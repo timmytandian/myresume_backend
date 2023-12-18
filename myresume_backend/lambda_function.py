@@ -20,6 +20,11 @@ from schemas import INPUT_SCHEMA, OUTPUT_SCHEMA
 _LAMBDA_DYNAMODB_RESOURCE = { "resource" : resource('dynamodb'), 
                               "table_name" : environ.get("DYNAMODB_TABLE_NAME","NONE") }
 
+# A custom class to catch error when 
+# the request from API Gateway cannot be handled
+class ApiRequestNotFoundError(LookupError):
+    pass
+
 # [2] Define a Global class an AWS Resource: Amazon DynamoDB. 
 class LambdaDynamoDBClass:
     """
@@ -42,9 +47,28 @@ def lambda_handler(event: APIGatewayProxyEvent,context: LambdaContext) -> Dict[s
     # [5] Use the Global variables to optimize AWS resource connections
     global _LAMBDA_DYNAMODB_RESOURCE
 
-    dynamodb_resource_class = LambdaDynamoDBClass(_LAMBDA_DYNAMODB_RESOURCE)
-    return getVisitorsCount(dynamo_db=dynamodb_resource_class,
-                            page_id=event["pathParameters"]["page-id"])
+    try:
+        # parse event object from API Gateway
+        routeKey = event.get('routeKey', '{}')
+        functionName = event.get('queryStringParameters', {"func":"{}"}).get('func','{}')
+        pageId = event.get('pathParameters', '{}').get('page-id','{}')
+
+        dynamodb_resource_class = LambdaDynamoDBClass(_LAMBDA_DYNAMODB_RESOURCE)
+
+        if (routeKey == 'GET /counts/{page-id}') and (functionName == "getVisitorCount"):
+            return getVisitorsCount(dynamo_db=dynamodb_resource_class,
+                                    page_id=pageId)
+        elif (routeKey == 'GET /counts/{page-id}') and (functionName == "addOneVisitorCount"):
+            return addOneVisitorCount(  dynamo_db=dynamodb_resource_class,
+                                        page_id=pageId)
+        else:
+            raise ApiRequestNotFoundError("Requested path or parameter not found")
+    
+    except ApiRequestNotFoundError as e:
+        body = "Not Found: " + e.args[0]
+        status_code = 404
+        return {"statusCode": status_code, "body" : body }
+    
 
 def getVisitorsCount( dynamo_db: LambdaDynamoDBClass,
                       page_id: str) -> dict:
@@ -58,7 +82,9 @@ def getVisitorsCount( dynamo_db: LambdaDynamoDBClass,
     #print(page_id)
     try:         
         # [7] Use the passed environment class for AWS resource access - DynamoDB
-        visitorCount = int(dynamo_db.table.get_item(Key={"pkey_uuid": page_id})["Item"]["visit_count"])
+        dbResponse = dynamo_db.table.get_item(  Key={"pkey_uuid": page_id},
+                                                ConsistentRead=False)
+        visitorCount = extract_visit_count_from_dbresponse(dbResponse)
         body = f"{visitorCount}"
     except KeyError as index_error:
         body = "Not Found: " + str(index_error)
@@ -70,10 +96,58 @@ def getVisitorsCount( dynamo_db: LambdaDynamoDBClass,
         print(body)
         return {"statusCode": status_code, "body" : body }
 
+def addOneVisitorCount(dynamo_db: LambdaDynamoDBClass,
+                       page_id: str) -> dict:
+    """
+    Given a page id, return page's visitors count which has been added by one.
+    """
+
+    status_code = 200
+    body = "0" # a placeholder
+    
+    try:         
+        # [8] Use the passed environment class for AWS resource access - DynamoDB
+        dbResponse = dynamo_db.table.update_item(   Key={
+                                                        "pkey_uuid": page_id
+                                                    },
+                                                    UpdateExpression='SET #updateAttr1 = #updateAttr1 + :val',
+                                                    ExpressionAttributeNames={
+                                                        '#updateAttr1': "visit_count"
+                                                    },
+                                                    ExpressionAttributeValues={
+                                                        ":val": 1
+                                                    },
+                                                    ReturnValues='UPDATED_NEW'
+                                                )
+        visitorCount = extract_visit_count_from_dbresponse(dbResponse)
+        body = f"{visitorCount}"
+
+    except KeyError as index_error:
+        body = "Not Found: " + str(index_error)
+        status_code = 404
+    except Exception as other_error:               
+        body = "ERROR: " + str(other_error)
+        status_code = 500
+    finally:
+        print(body)
+        return {"statusCode": status_code, "body" : body }
+
+def extract_visit_count_from_dbresponse(dbResponse):
+    
+    for key in dbResponse:
+        if(dbResponse[key].get('visit_count')):
+            visitCount = int(dbResponse[key].get('visit_count'))
+            return visitCount
+    raise KeyError ('"visit_count" attribute is expected but not found in the database response. Check again the page-id.')
+    #except KeyError as e:
+    #    return e.args[0]
+    #except Exception as e:
+    #    errorMessage = 'An unexpected occured, unable to extract visitor count from database response. Details:{}'.format(e)
+    #    return errorMessage
 
 def main():
     # Read event from json for testing
-    eventFileName = f"tests/events/sampleEvent.json"
+    eventFileName = f"tests/events/sampleEvent_addOneVisitorCount.json"
     with open(eventFileName,"r",encoding='UTF-8') as fileHandle:
         event = json.load(fileHandle)
     
