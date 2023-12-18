@@ -4,6 +4,7 @@ from boto3 import resource
 from aws_lambda_powertools.utilities.data_classes import APIGatewayProxyEvent
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from aws_lambda_powertools.utilities.validation import validator
+import sys
 
 # for my test
 import json
@@ -143,9 +144,15 @@ def extract_visit_count_from_dbresponse(dbResponse):
             return visitCount
     raise KeyError ('"visit_count" attribute is expected but not found in the database response. Check again the page-id.')
 
-def main():
+def main(argv):
+    # parse input argument
+    try:
+        sampleEventFile = argv[1]
+    except IndexError:
+        sampleEventFile = "getVisitorCount"
+    
     # Read event from json for testing
-    eventFileName = f"tests/events/sampleEvent_addOneVisitorCount.json"
+    eventFileName = f"tests/events/sampleEvent_{sampleEventFile}.json"
     with open(eventFileName,"r",encoding='UTF-8') as fileHandle:
         event = json.load(fileHandle)
     
@@ -153,4 +160,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv)
