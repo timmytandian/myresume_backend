@@ -132,18 +132,16 @@ def addOneVisitorCount(dynamo_db: LambdaDynamoDBClass,
         print(body)
         return {"statusCode": status_code, "body" : body }
 
+
 def extract_visit_count_from_dbresponse(dbResponse):
-    
+    """
+    Extract the "visit_count" value from the json payload of the DB response.
+    """
     for key in dbResponse:
         if(dbResponse[key].get('visit_count')):
             visitCount = int(dbResponse[key].get('visit_count'))
             return visitCount
     raise KeyError ('"visit_count" attribute is expected but not found in the database response. Check again the page-id.')
-    #except KeyError as e:
-    #    return e.args[0]
-    #except Exception as e:
-    #    errorMessage = 'An unexpected occured, unable to extract visitor count from database response. Details:{}'.format(e)
-    #    return errorMessage
 
 def main():
     # Read event from json for testing
