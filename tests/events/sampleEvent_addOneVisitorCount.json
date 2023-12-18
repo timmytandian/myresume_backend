@@ -1,0 +1,44 @@
+{
+    "version":"2.0",
+    "routeKey":"GET /counts/{page-id}",
+    "rawPath":"/dev/counts/6632d5b4-5655-4c48-b7b6-071d5823c888",
+    "rawQueryString":"func=addOneVisitorCount",
+    "headers":{
+       "accept":"*/*",
+       "accept-encoding":"gzip, deflate, br",
+       "content-length":"0",
+       "content-type":"application/json",
+       "host":"3ijz5acnoe.execute-api.ap-northeast-1.amazonaws.com",
+       "postman-token":"79aa3a4d-3dd0-4b45-be2d-e3f3f1de8c8f",
+       "user-agent":"PostmanRuntime/7.35.0",
+       "x-amzn-trace-id":"Root=1-655ef377-4e899ef40f15a023058a9491",
+       "x-forwarded-for":"126.29.55.95",
+       "x-forwarded-port":"443",
+       "x-forwarded-proto":"https"
+    },
+    "queryStringParameters":{
+       "func":"addOneVisitorCount"
+    },
+    "requestContext":{
+       "accountId":"966337238076",
+       "apiId":"3ijz5acnoe",
+       "domainName":"3ijz5acnoe.execute-api.ap-northeast-1.amazonaws.com",
+       "domainPrefix":"3ijz5acnoe",
+       "http":{
+          "method":"GET",
+          "path":"/dev/counts/6632d5b4-5655-4c48-b7b6-071d5823c888",
+          "protocol":"HTTP/1.1",
+          "sourceIp":"126.29.55.95",
+          "userAgent":"PostmanRuntime/7.35.0"
+       },
+       "requestId":"O1r6vh1nNjMEMeA=",
+       "routeKey":"GET /counts/{page-id}",
+       "stage":"dev",
+       "time":"23/Nov/2023:06:38:47 +0000",
+       "timeEpoch":1700721527682
+    },
+    "pathParameters":{
+       "page-id":"6632d5b4-5655-4c48-b7b6-071d5823c888"
+    },
+    "isBase64Encoded":false
+ }
