@@ -134,9 +134,10 @@ def addOneVisitorCount(dynamo_db: LambdaDynamoDBClass,
         return {"statusCode": status_code, "body" : body }
 
 
-def extract_visit_count_from_dbresponse(dbResponse):
+def extract_visit_count_from_dbresponse(dbResponse) -> int:
     """
     Extract the "visit_count" value from the json payload of the DB response.
+    Return integer.
     """
     for key in dbResponse:
         if(dbResponse[key].get('visit_count')):
