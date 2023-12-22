@@ -1,9 +1,11 @@
 from os import environ
 from typing import Any, Dict
 from boto3 import resource
+import botocore.exceptions
 from aws_lambda_powertools.utilities.data_classes import APIGatewayProxyEvent
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from aws_lambda_powertools.utilities.validation import validator
+from aws_lambda_powertools.utilities.validation.exceptions import SchemaValidationError
 import sys
 
 # for my test
@@ -65,8 +67,8 @@ def lambda_handler(event: APIGatewayProxyEvent,context: LambdaContext) -> Dict[s
         else:
             raise ApiRequestNotFoundError("Requested path or parameter not found")
     
-    except ApiRequestNotFoundError as e:
-        body = "Not Found: " + e.args[0]
+    except ApiRequestNotFoundError as api_error:
+        body = "Not Found: " + api_error.args[0]
         status_code = 404
         return {"statusCode": status_code, "body" : body }
     
@@ -126,6 +128,9 @@ def addOneVisitorCount(dynamo_db: LambdaDynamoDBClass,
     except KeyError as index_error:
         body = "Not Found: " + str(index_error)
         status_code = 404
+    except botocore.exceptions.ClientError as dynamodb_error:
+        body = "Not Found: " + str(dynamodb_error)
+        status_code = 404
     except Exception as other_error:               
         body = "ERROR: " + str(other_error)
         status_code = 500
@@ -157,7 +162,12 @@ def main(argv):
     with open(eventFileName,"r",encoding='UTF-8') as fileHandle:
         event = json.load(fileHandle)
     
-    return lambda_handler(event, None)
+    try:
+        return lambda_handler(event, None)
+    except SchemaValidationError as schema_error:
+        body = "Bad Request: " + schema_error.args[0]
+        status_code = 400
+        return {"statusCode": status_code, "body" : body }
 
 
 if __name__ == "__main__":
