@@ -10,7 +10,10 @@ from aws_lambda_powertools.utilities.validation import validate
 # [0] Import the Globals, Classes, Schemas, and Functions from the Lambda Handler
 sys.path.append('./myresume_backend')
 from myresume_backend.lambda_function import LambdaDynamoDBClass   # pylint: disable=wrong-import-position
-from myresume_backend.lambda_function import lambda_handler, getVisitorsCount  # pylint: disable=wrong-import-position
+from myresume_backend.lambda_function import lambda_handler
+from myresume_backend.lambda_function import extract_visit_count_from_dbresponse
+from myresume_backend.lambda_function import getVisitorsCount
+from myresume_backend.lambda_function import addOneVisitorCount  # pylint: disable=wrong-import-position
 from myresume_backend.schemas import INPUT_SCHEMA                     # pylint: disable=wrong-import-position
 
 # [1] Mock all AWS Services in use
@@ -57,7 +60,7 @@ class TestLambdaFunction(TestCase):
                                                         "visit_count":42
                                                         })
 
-        # [6] Run DynamoDB to S3 file function
+        # [6] Run the getVisitorsCount function to get the visit-count value
         test_return_value = getVisitorsCount(
                         dynamo_db = self.mocked_dynamodb_class,
                         page_id="12345678-1234-5678-1234-56781234"
@@ -87,6 +90,84 @@ class TestLambdaFunction(TestCase):
         self.assertIn("Not Found", test_return_value["body"])
 
 
+    def test_addOneVisitorCount(self) -> None:
+        """
+        Verify given correct parameters, return page's visitors count 
+        which has been added by one from DynamoDB.
+        """
+
+        # [5] Post test items to a mocked database
+        self.mocked_dynamodb_class.table.put_item(Item={"pkey_uuid": "12345678-1234-5678-1234-56781234",
+                                                        "visit_count":42
+                                                        })
+
+        # [6] Run the addOneVisitorCount function to get the visit-count value
+        test_return_value = addOneVisitorCount(
+                        dynamo_db = self.mocked_dynamodb_class,
+                        page_id="12345678-1234-5678-1234-56781234"
+                        )
+
+        # Test
+        self.assertEqual(test_return_value["statusCode"], 200)
+        self.assertEqual(test_return_value["body"], "43")
+
+    def test_addOneVisitorCount_pageid_notfound_404(self) -> None:
+        """
+        Verify given a page-id not present in the table, a 404 error is returned.
+        """
+        # [8] Post test items to a mocked database
+        self.mocked_dynamodb_class.table.put_item(Item={"pkey_uuid": "12345678-1234-5678-1234-56781234",
+                                                        "visit_count":42
+                                                        })
+
+        test_return_value = addOneVisitorCount(
+                        dynamo_db = self.mocked_dynamodb_class,
+                        page_id="NOTVALID-1234-5678-1234-56781234"
+                        )
+
+        # Test
+        self.assertEqual(test_return_value["statusCode"], 404)
+        self.assertIn("Not Found", test_return_value["body"])
+
+
+    def test_extract_visit_count_from_dbresponse(self) -> None:
+        """
+        Verify given correct parameters, the 'visit_count' value of
+        DB response can be extracted correctly either when the DB is
+        responsing to DynamoDB's table get_item or update_item.
+        """
+
+        # [5] Post test items to a mocked database
+        self.mocked_dynamodb_class.table.put_item(Item={"pkey_uuid": "12345678-1234-5678-1234-56781234",
+                                                        "visit_count":42
+                                                        })
+
+        # [6] Use get_item and update_item to have the DB send response
+        test_dbResponse_get_item = self.mocked_dynamodb_class.table.get_item(
+                        Key={"pkey_uuid": "12345678-1234-5678-1234-56781234"},
+                        ConsistentRead=False)
+        test_dbResponse_update_item = self.mocked_dynamodb_class.table.update_item(
+                        Key={
+                            "pkey_uuid": "12345678-1234-5678-1234-56781234"
+                        },
+                        UpdateExpression='SET #updateAttr1 = #updateAttr1 + :val',
+                        ExpressionAttributeNames={
+                            '#updateAttr1': "visit_count"
+                        },
+                        ExpressionAttributeValues={
+                            ":val": 1
+                        },
+                        ReturnValues='UPDATED_NEW')
+
+        # Perform the extraction using extract_visit_count_from_dbresponse function
+        test_extraction_get_item = extract_visit_count_from_dbresponse(test_dbResponse_get_item)
+        test_extraction_update_item = extract_visit_count_from_dbresponse(test_dbResponse_update_item)
+
+        # Test
+        self.assertEqual(test_extraction_get_item, 42)
+        self.assertEqual(test_extraction_update_item, 43)
+
+    
     # [12] Load and validate test events from the file system
     def load_sample_event_from_file(self, test_event_file_name: str) ->  dict:
         """
