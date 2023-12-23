@@ -10,3 +10,7 @@ tests/unit/__pycache__/
 
 # pytest cache
 .pytest_cache/
+
+# folders to build lambda layer
+aws_layer/
+dist/
