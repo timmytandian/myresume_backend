@@ -7,7 +7,7 @@ from boto3 import resource, client
 import moto
 from aws_lambda_powertools.utilities.validation import validate
 
-# [0] Import the Globals, Classes, Schemas, and Functions from the Lambda Handler
+# Import the Globals, Classes, Schemas, and Functions from the Lambda Handler
 sys.path.append('./myresume_backend')
 from myresume_backend.lambda_function import LambdaDynamoDBClass   # pylint: disable=wrong-import-position
 from myresume_backend.lambda_function import lambda_handler
@@ -16,7 +16,7 @@ from myresume_backend.lambda_function import getVisitorsCount
 from myresume_backend.lambda_function import addOneVisitorCount  # pylint: disable=wrong-import-position
 from myresume_backend.schemas import INPUT_SCHEMA                     # pylint: disable=wrong-import-position
 
-# [1] Mock all AWS Services in use
+# Mock all AWS Services in use
 @moto.mock_dynamodb
 class TestLambdaFunction(TestCase):
     """
@@ -29,11 +29,11 @@ class TestLambdaFunction(TestCase):
         Create mocked resources for use during tests
         """
 
-        # [2] Mock environment & override resources
+        # Mock environment & override resources
         self.test_ddb_table_name = "unit_test_ddb"
         os.environ["DYNAMODB_TABLE_NAME"] = self.test_ddb_table_name
         
-        # [3] Set up the services: construct a (mocked!) DynamoDB table
+        # Set up the services: construct a (mocked!) DynamoDB table
         dynamodb = resource("dynamodb", region_name="ap-northeast-1")
         dynamodb.create_table(
             TableName = self.test_ddb_table_name,
@@ -42,7 +42,7 @@ class TestLambdaFunction(TestCase):
             BillingMode='PAY_PER_REQUEST'
             )
 
-        # [4] Establish the "GLOBAL" environment for use in tests.
+        # Establish the "GLOBAL" environment for use in tests.
         mocked_dynamodb_resource = resource("dynamodb")
         mocked_dynamodb_resource = { "resource" : resource('dynamodb'),
                                      "table_name" : self.test_ddb_table_name  }
@@ -55,18 +55,18 @@ class TestLambdaFunction(TestCase):
         which is retrieved from DynamoDB.
         """
 
-        # [5] Post test items to a mocked database
+        # Post test items to a mocked database
         self.mocked_dynamodb_class.table.put_item(Item={"pkey_uuid": "12345678-1234-5678-1234-56781234",
                                                         "visit_count":42
                                                         })
 
-        # [6] Run the getVisitorsCount function to get the visit-count value
+        # Run the getVisitorsCount function to get the visit-count value
         test_return_value = getVisitorsCount(
                         dynamo_db = self.mocked_dynamodb_class,
                         page_id="12345678-1234-5678-1234-56781234"
                         )
 
-        # Test
+        # Assertion
         self.assertEqual(test_return_value["statusCode"], 200)
         self.assertEqual(test_return_value["body"], "42")
 
@@ -75,7 +75,7 @@ class TestLambdaFunction(TestCase):
         """
         Verify given a page-id not present in the table, a 404 error is returned.
         """
-        # [8] Post test items to a mocked database
+        # Post test items to a mocked database
         self.mocked_dynamodb_class.table.put_item(Item={"pkey_uuid": "12345678-1234-5678-1234-56781234",
                                                         "visit_count":42
                                                         })
@@ -85,7 +85,7 @@ class TestLambdaFunction(TestCase):
                         page_id="NOTVALID-1234-5678-1234-56781234"
                         )
 
-        # Test
+        # Assertion
         self.assertEqual(test_return_value["statusCode"], 404)
         self.assertIn("Not Found", test_return_value["body"])
 
@@ -96,18 +96,18 @@ class TestLambdaFunction(TestCase):
         which has been added by one from DynamoDB.
         """
 
-        # [5] Post test items to a mocked database
+        # Post test items to a mocked database
         self.mocked_dynamodb_class.table.put_item(Item={"pkey_uuid": "12345678-1234-5678-1234-56781234",
                                                         "visit_count":42
                                                         })
 
-        # [6] Run the addOneVisitorCount function to get the visit-count value
+        # Run the addOneVisitorCount function to get the visit-count value
         test_return_value = addOneVisitorCount(
                         dynamo_db = self.mocked_dynamodb_class,
                         page_id="12345678-1234-5678-1234-56781234"
                         )
 
-        # Test
+        # Assertion
         self.assertEqual(test_return_value["statusCode"], 200)
         self.assertEqual(test_return_value["body"], "43")
 
@@ -115,7 +115,7 @@ class TestLambdaFunction(TestCase):
         """
         Verify given a page-id not present in the table, a 404 error is returned.
         """
-        # [8] Post test items to a mocked database
+        # Post test items to a mocked database
         self.mocked_dynamodb_class.table.put_item(Item={"pkey_uuid": "12345678-1234-5678-1234-56781234",
                                                         "visit_count":42
                                                         })
@@ -125,7 +125,7 @@ class TestLambdaFunction(TestCase):
                         page_id="NOTVALID-1234-5678-1234-56781234"
                         )
 
-        # Test
+        # Assertion
         self.assertEqual(test_return_value["statusCode"], 404)
         self.assertIn("Not Found", test_return_value["body"])
 
@@ -137,12 +137,12 @@ class TestLambdaFunction(TestCase):
         responsing to DynamoDB's table get_item or update_item.
         """
 
-        # [5] Post test items to a mocked database
+        # Post test items to a mocked database
         self.mocked_dynamodb_class.table.put_item(Item={"pkey_uuid": "12345678-1234-5678-1234-56781234",
                                                         "visit_count":42
                                                         })
 
-        # [6] Use get_item and update_item to have the DB send response
+        # Use get_item and update_item to have the DB send response
         test_dbResponse_get_item = self.mocked_dynamodb_class.table.get_item(
                         Key={"pkey_uuid": "12345678-1234-5678-1234-56781234"},
                         ConsistentRead=False)
@@ -163,12 +163,12 @@ class TestLambdaFunction(TestCase):
         test_extraction_get_item = extract_visit_count_from_dbresponse(test_dbResponse_get_item)
         test_extraction_update_item = extract_visit_count_from_dbresponse(test_dbResponse_update_item)
 
-        # Test
+        # Assertion
         self.assertEqual(test_extraction_get_item, 42)
         self.assertEqual(test_extraction_update_item, 43)
 
     
-    # [12] Load and validate test events from the file system
+    # Load and validate test events from the file system
     def load_sample_event_from_file(self, test_event_file_name: str) ->  dict:
         """
         Loads and validate test events from the file system
@@ -180,7 +180,7 @@ class TestLambdaFunction(TestCase):
             return event
         
     
-    # [13] Patch the Global Class and any function calls
+    # Patch the Global Class and any function calls
     @patch("myresume_backend.lambda_function.LambdaDynamoDBClass")
     @patch("myresume_backend.lambda_function.getVisitorsCount")
     def test_lambda_handler_getVisitorsCount_valid_event_returns_200(self,
@@ -193,26 +193,26 @@ class TestLambdaFunction(TestCase):
         4) a status code 200 is returned.
         """
 
-        # [14] Test setup - Return a mock for the global variables and resources
+        # Test setup - Return a mock for the global variables and resources
         patch_lambda_dynamodb_class.return_value = self.mocked_dynamodb_class
         
         return_value_200 = {"statusCode" : 200, "body":"OK"}
         patch_getVisitorsCount.return_value = return_value_200
 
-        # [15] Run Test using a test event from /tests/events/*.json
+        # Run Test using a test event from /tests/events/*.json
         test_event = self.load_sample_event_from_file("sampleEvent_getVisitorCount")
         test_return_value = lambda_handler(event=test_event, context=None)
 
-        # [16] Validate the function was called with the mocked globals
-        # and event values
+        # Validate the function was called with the mocked globa and event values
         patch_getVisitorsCount.assert_called_once_with(
                                         dynamo_db=self.mocked_dynamodb_class,
                                         page_id=test_event["pathParameters"]["page-id"])
 
+        # Assertion
         self.assertEqual(test_return_value, return_value_200)
 
 
-    # [17] Patch the Global Class and any function calls
+    # Patch the Global Class and any function calls
     @patch("myresume_backend.lambda_function.LambdaDynamoDBClass")
     @patch("myresume_backend.lambda_function.addOneVisitorCount")
     def test_lambda_handler_addOneVisitorCount_valid_event_returns_200(self,
@@ -225,25 +225,26 @@ class TestLambdaFunction(TestCase):
         4) a status code 200 is returned.
         """
 
-        # [18] Test setup - Return a mock for the global variables and resources
+        # Test setup - Return a mock for the global variables and resources
         patch_lambda_dynamodb_class.return_value = self.mocked_dynamodb_class
         
         return_value_200 = {"statusCode" : 200, "body":"OK"}
         patch_addOneVisitorCount.return_value = return_value_200
 
-        # [19] Run Test using a test event from /tests/events/*.json
+        # Run Test using a test event from /tests/events/*.json
         test_event = self.load_sample_event_from_file("sampleEvent_addOneVisitorCount")
         test_return_value = lambda_handler(event=test_event, context=None)
 
-        # [20] Validate the function was called with the mocked globals
-        # and event values
+        # Validate the function was called with the mocked global and event values
         patch_addOneVisitorCount.assert_called_once_with(
                                         dynamo_db=self.mocked_dynamodb_class,
                                         page_id=test_event["pathParameters"]["page-id"])
 
+        # Assertion
         self.assertEqual(test_return_value, return_value_200)
 
+
     def tearDown(self) -> None:
-        # [14] Remove (mocked!) DynamoDB Table
+        # Remove (mocked!) DynamoDB Table
         dynamodb_resource = client("dynamodb", region_name="ap-northeast-1")
         dynamodb_resource.delete_table(TableName = self.test_ddb_table_name )

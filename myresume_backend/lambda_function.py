@@ -7,9 +7,7 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 from aws_lambda_powertools.utilities.validation import validator
 from aws_lambda_powertools.utilities.validation.exceptions import SchemaValidationError
 import sys
-
-# for my test
-import json
+import json # for testing
 
 # Reference: 
 # github: https://github.com/aws-samples/serverless-test-samples/blob/main/python-test-samples/lambda-mock/src/sample_lambda/app.py
@@ -18,7 +16,7 @@ import json
 # Import the schema for the Lambda Powertools Validator
 from schemas import INPUT_SCHEMA, OUTPUT_SCHEMA
 
-# [1] Globally scoped resources
+# Prepare globally scoped resources
 # Initialize the resources once per Lambda execution environment by using global scope.
 _LAMBDA_DYNAMODB_RESOURCE = { "resource" : resource('dynamodb'), 
                               "table_name" : environ.get("DYNAMODB_TABLE_NAME","NONE") }
@@ -28,7 +26,7 @@ _LAMBDA_DYNAMODB_RESOURCE = { "resource" : resource('dynamodb'),
 class ApiRequestNotFoundError(LookupError):
     pass
 
-# [2] Define a Global class an AWS Resource: Amazon DynamoDB. 
+# Define a Global class an AWS Resource: Amazon DynamoDB. 
 class LambdaDynamoDBClass:
     """
     AWS DynamoDB Resource Class
@@ -41,13 +39,13 @@ class LambdaDynamoDBClass:
         self.table_name = lambda_dynamodb_resource["table_name"]
         self.table = self.resource.Table(self.table_name)
 
-# [4] Validate the event schema and return schema using Lambda Power Tools
+# Validate the event schema and return schema using Lambda Power Tools
 @validator(inbound_schema=INPUT_SCHEMA, outbound_schema=OUTPUT_SCHEMA)
 def lambda_handler(event: APIGatewayProxyEvent,context: LambdaContext) -> Dict[str, Any]:
     """
     Lambda Entry Point
     """
-    # [5] Use the Global variables to optimize AWS resource connections
+    # Use the Global variables to optimize AWS resource connections
     global _LAMBDA_DYNAMODB_RESOURCE
 
     try:
@@ -56,8 +54,10 @@ def lambda_handler(event: APIGatewayProxyEvent,context: LambdaContext) -> Dict[s
         functionName = event.get('queryStringParameters', {"func":"{}"}).get('func','{}')
         pageId = event.get('pathParameters', '{}').get('page-id','{}')
 
+        # initialize the AWS DynamoDB resource
         dynamodb_resource_class = LambdaDynamoDBClass(_LAMBDA_DYNAMODB_RESOURCE)
 
+        # execute the API depending on the function name
         if (routeKey == 'GET /counts/{page-id}') and (functionName == "getVisitorCount"):
             return getVisitorsCount(dynamo_db=dynamodb_resource_class,
                                     page_id=pageId)
@@ -80,11 +80,12 @@ def getVisitorsCount( dynamo_db: LambdaDynamoDBClass,
      DynamoDB.
     """
 
+    # default output as placeholder
     status_code = 200
-    body = "0" # a placeholder
-    #print(page_id)
+    body = "0"
+
     try:         
-        # [7] Use the passed environment class for AWS resource access - DynamoDB
+        # Use the passed environment class for AWS resource access to read from the DB
         dbResponse = dynamo_db.table.get_item(  Key={"pkey_uuid": page_id},
                                                 ConsistentRead=False)
         visitorCount = extract_visit_count_from_dbresponse(dbResponse)
@@ -105,11 +106,12 @@ def addOneVisitorCount(dynamo_db: LambdaDynamoDBClass,
     Given a page id, return page's visitors count which has been added by one.
     """
 
+    # default output as placeholder
     status_code = 200
-    body = "0" # a placeholder
+    body = "0"
     
     try:         
-        # [8] Use the passed environment class for AWS resource access - DynamoDB
+        # Use the passed environment class for AWS resource access to update the DB
         dbResponse = dynamo_db.table.update_item(   Key={
                                                         "pkey_uuid": page_id
                                                     },
@@ -144,12 +146,18 @@ def extract_visit_count_from_dbresponse(dbResponse) -> int:
     Extract the "visit_count" value from the json payload of the DB response.
     Return integer.
     """
+    
+    # naively iterate for all keys in the DB response payload to look for "visit_count"
     for key in dbResponse:
         if(dbResponse[key].get('visit_count')):
             visitCount = int(dbResponse[key].get('visit_count'))
             return visitCount
     raise KeyError ('"visit_count" attribute is expected but not found in the database response. Check again the page-id.')
 
+
+# I used the 'main' part below when developing/debugging in my local machine.
+# The 'main' part below is not necessary when deploying the code to Lambda.
+'''
 def main(argv):
     # parse input argument
     try:
@@ -172,3 +180,4 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv)
+'''
