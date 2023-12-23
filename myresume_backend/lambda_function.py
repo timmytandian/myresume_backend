@@ -1,183 +1,130 @@
+import simplejson as json
+import boto3
+import botocore
+import logging
 from os import environ
-from typing import Any, Dict
-from boto3 import resource
-import botocore.exceptions
-from aws_lambda_powertools.utilities.data_classes import APIGatewayProxyEvent
-from aws_lambda_powertools.utilities.typing import LambdaContext
-from aws_lambda_powertools.utilities.validation import validator
-from aws_lambda_powertools.utilities.validation.exceptions import SchemaValidationError
-import sys
-import json # for testing
 
-# Reference: 
-# github: https://github.com/aws-samples/serverless-test-samples/blob/main/python-test-samples/lambda-mock/src/sample_lambda/app.py
-# AWS blog: https://aws.amazon.com/blogs/devops/unit-testing-aws-lambda-with-python-and-mock-aws-services/
-
-# Import the schema for the Lambda Powertools Validator
-from schemas import INPUT_SCHEMA, OUTPUT_SCHEMA
-
-# Prepare globally scoped resources
-# Initialize the resources once per Lambda execution environment by using global scope.
-_LAMBDA_DYNAMODB_RESOURCE = { "resource" : resource('dynamodb'), 
-                              "table_name" : environ.get("DYNAMODB_TABLE_NAME","NONE") }
+DDB_TABLE_NAME = environ.get("DYNAMODB_TABLE_NAME","NONE")
 
 # A custom class to catch error when 
 # the request from API Gateway cannot be handled
 class ApiRequestNotFoundError(LookupError):
     pass
 
-# Define a Global class an AWS Resource: Amazon DynamoDB. 
-class LambdaDynamoDBClass:
-    """
-    AWS DynamoDB Resource Class
-    """
-    def __init__(self, lambda_dynamodb_resource):
-        """
-        Initialize a DynamoDB Resource
-        """
-        self.resource = lambda_dynamodb_resource["resource"]
-        self.table_name = lambda_dynamodb_resource["table_name"]
-        self.table = self.resource.Table(self.table_name)
+def respond(err, res=None):
+    return {
+        'statusCode': 400 if err else 200,
+        'body': err if err else res,
+        'headers': {
+            'Content-Type': 'application/json',
+            
+        },
+    }
 
-# Validate the event schema and return schema using Lambda Power Tools
-@validator(inbound_schema=INPUT_SCHEMA, outbound_schema=OUTPUT_SCHEMA)
-def lambda_handler(event: APIGatewayProxyEvent,context: LambdaContext) -> Dict[str, Any]:
-    """
-    Lambda Entry Point
-    """
-    # Use the Global variables to optimize AWS resource connections
-    global _LAMBDA_DYNAMODB_RESOURCE
+def table_get_item(table, partitionKey, partitionKeyVal):
+    response = table.get_item(
+                Key={
+                    partitionKey: partitionKeyVal,
+                    
+                },
+                ConsistentRead=False
+    )
+    return response
 
+def table_update_item_plus1(table, partitionKey, partitionKeyVal, updateAttr1):
+    response = table.update_item(
+                Key={
+                    partitionKey: partitionKeyVal,
+                    
+                },
+                UpdateExpression='SET #updateAttr1 = #updateAttr1 + :val',
+                ExpressionAttributeNames={
+                    '#updateAttr1': updateAttr1
+                },
+                ExpressionAttributeValues={
+                    ":val": 1
+                },
+                ReturnValues='UPDATED_NEW'
+    )
+    return response
+
+def extract_visit_count_from_response(res):
     try:
+        for key in res:
+            if(res[key].get('visit_count')):
+                visitCount = int(res[key].get('visit_count'))
+                return visitCount
+        raise KeyError ('"visit_count" attribute is expected but not found in the database response. Check again the page-id.')
+    except KeyError as e:
+        logging.error(e)
+        return e.args[0]
+    except Exception as e:
+        errorMessage = 'An unexpected occured, unable to extract visitor count from database response. Details:{}'.format(e)
+        logging.error(errorMessage)
+        return errorMessage
+
+def lambda_handler(event, context):
+    # check boto version for future debugging
+    logging.debug('botocore version: {0}'.format(botocore.__version__))
+    logging.debug('boto3 version: {0}'.format(boto3.__version__))
+    
+    # define some variables related to DynamoDB
+    dynamodb = boto3.resource("dynamodb")
+    ddbTable = dynamodb.Table(DDB_TABLE_NAME)
+    ddbPartKey = "pkey_uuid"
+    ddbAttribute = "visit_count"
+    
+    try:
+        
         # parse event object from API Gateway
         routeKey = event.get('routeKey', '{}')
         functionName = event.get('queryStringParameters', {"func":"{}"}).get('func','{}')
         pageId = event.get('pathParameters', '{}').get('page-id','{}')
-
-        # initialize the AWS DynamoDB resource
-        dynamodb_resource_class = LambdaDynamoDBClass(_LAMBDA_DYNAMODB_RESOURCE)
-
-        # execute the API depending on the function name
+        
         if (routeKey == 'GET /counts/{page-id}') and (functionName == "getVisitorCount"):
-            return getVisitorsCount(dynamo_db=dynamodb_resource_class,
-                                    page_id=pageId)
+            dbResponse = table_get_item(ddbTable, ddbPartKey, pageId)
+            logging.info('dbResponse: {}'.format(dbResponse))
+            response = extract_visit_count_from_response(dbResponse)
+            #response = dbResponse # this line is only for debugging purpose
         elif (routeKey == 'GET /counts/{page-id}') and (functionName == "addOneVisitorCount"):
-            return addOneVisitorCount(  dynamo_db=dynamodb_resource_class,
-                                        page_id=pageId)
+            dbResponse = table_update_item_plus1(ddbTable, ddbPartKey, pageId, ddbAttribute)
+            logging.info('dbResponse: {}'.format(dbResponse))
+            response = extract_visit_count_from_response(dbResponse)
+            #response = dbResponse # this line is only for debugging purpose
         else:
             raise ApiRequestNotFoundError("Requested path or parameter not found")
+            
+        
+        # log troubleshooting message
+        logging.info('event: {}'.format(event))
+        logging.info('response: {}'.format(response))
+        
+        # if everything is successful, return the DynamoDB response
+        return respond(err=None, res=json.dumps(response))
     
-    except ApiRequestNotFoundError as api_error:
-        body = "Not Found: " + api_error.args[0]
-        status_code = 404
-        return {"statusCode": status_code, "body" : body }
-    
-
-def getVisitorsCount( dynamo_db: LambdaDynamoDBClass,
-                      page_id: str) -> dict:
-    """
-    Given a page id, return page's visitors count which is retrieved from
-     DynamoDB.
-    """
-
-    # default output as placeholder
-    status_code = 200
-    body = "0"
-
-    try:         
-        # Use the passed environment class for AWS resource access to read from the DB
-        dbResponse = dynamo_db.table.get_item(  Key={"pkey_uuid": page_id},
-                                                ConsistentRead=False)
-        visitorCount = extract_visit_count_from_dbresponse(dbResponse)
-        body = f"{visitorCount}"
-    except KeyError as index_error:
-        body = "Not Found: " + str(index_error)
-        status_code = 404
-    except Exception as other_error:               
-        body = "ERROR: " + str(other_error)
-        status_code = 500
-    finally:
-        print(body)
-        return {"statusCode": status_code, "body" : body }
-
-def addOneVisitorCount(dynamo_db: LambdaDynamoDBClass,
-                       page_id: str) -> dict:
-    """
-    Given a page id, return page's visitors count which has been added by one.
-    """
-
-    # default output as placeholder
-    status_code = 200
-    body = "0"
-    
-    try:         
-        # Use the passed environment class for AWS resource access to update the DB
-        dbResponse = dynamo_db.table.update_item(   Key={
-                                                        "pkey_uuid": page_id
-                                                    },
-                                                    UpdateExpression='SET #updateAttr1 = #updateAttr1 + :val',
-                                                    ExpressionAttributeNames={
-                                                        '#updateAttr1': "visit_count"
-                                                    },
-                                                    ExpressionAttributeValues={
-                                                        ":val": 1
-                                                    },
-                                                    ReturnValues='UPDATED_NEW'
-                                                )
-        visitorCount = extract_visit_count_from_dbresponse(dbResponse)
-        body = f"{visitorCount}"
-
-    except KeyError as index_error:
-        body = "Not Found: " + str(index_error)
-        status_code = 404
-    except botocore.exceptions.ClientError as dynamodb_error:
-        body = "Not Found: " + str(dynamodb_error)
-        status_code = 404
-    except Exception as other_error:               
-        body = "ERROR: " + str(other_error)
-        status_code = 500
-    finally:
-        print(body)
-        return {"statusCode": status_code, "body" : body }
-
-
-def extract_visit_count_from_dbresponse(dbResponse) -> int:
-    """
-    Extract the "visit_count" value from the json payload of the DB response.
-    Return integer.
-    """
-    
-    # naively iterate for all keys in the DB response payload to look for "visit_count"
-    for key in dbResponse:
-        if(dbResponse[key].get('visit_count')):
-            visitCount = int(dbResponse[key].get('visit_count'))
-            return visitCount
-    raise KeyError ('"visit_count" attribute is expected but not found in the database response. Check again the page-id.')
-
-
-# I used the 'main' part below when developing/debugging in my local machine.
-# The 'main' part below is not necessary when deploying the code to Lambda.
-'''
-def main(argv):
-    # parse input argument
-    try:
-        sampleEventFile = argv[1]
-    except IndexError:
-        sampleEventFile = "getVisitorCount"
-    
-    # Read event from json for testing
-    eventFileName = f"tests/events/sampleEvent_{sampleEventFile}.json"
-    with open(eventFileName,"r",encoding='UTF-8') as fileHandle:
-        event = json.load(fileHandle)
-    
-    try:
-        return lambda_handler(event, None)
-    except SchemaValidationError as schema_error:
-        body = "Bad Request: " + schema_error.args[0]
-        status_code = 400
-        return {"statusCode": status_code, "body" : body }
-
-
-if __name__ == "__main__":
-    main(sys.argv)
-'''
+        
+    except botocore.exceptions.ClientError as e:
+        response = {
+            "errorCode":'botocore.{}'.format(e.response['Error']['Code']),
+            "errorMessage":e.response['Error']['Message'],
+            "routeKey":routeKey,
+            "pathParameters":event.get('pathParameters','{}'),
+            "queryStringParameters":event.get('queryStringParameters','{}'),
+        }
+        if (e.response['Error']['Code'] == "ValidationException"):
+            response['errorMessage'] = "the provided attribute or partition key item is not found in DynamoDB."
+        logging.error(response['errorMessage'], extra=response)
+        return respond(err=json.dumps(response))
+    except KeyError as e:
+        keyErrorMsg = 'KeyError occured. The key named "{}" is expected, but not found in the request payload.'.format(e)
+        logging.error(keyErrorMsg)
+        return respond(err=keyErrorMsg)
+    except ApiRequestNotFoundError as e:
+        response = {
+            "errorMessage":e.args[0],
+            "routeKey":routeKey,
+            "pathParameters":event.get('pathParameters','{}'),
+            "queryStringParameters":event.get('queryStringParameters','{}'),
+        }
+        logging.error(response['errorMessage'], extra=response)
+        return respond(err=json.dumps(response))
