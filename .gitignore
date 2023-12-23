@@ -7,3 +7,6 @@ tests/unit/__pycache__/
 
 # VS Code debugging things
 .vscode/
+
+# test cache
+.pytest_cache/
