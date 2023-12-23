@@ -5,9 +5,7 @@ import botocore.exceptions
 from aws_lambda_powertools.utilities.data_classes import APIGatewayProxyEvent
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from aws_lambda_powertools.utilities.validation import validator
-from aws_lambda_powertools.utilities.validation.exceptions import SchemaValidationError
-import sys
-import json # for testing
+
 
 # Reference: 
 # github: https://github.com/aws-samples/serverless-test-samples/blob/main/python-test-samples/lambda-mock/src/sample_lambda/app.py
@@ -158,6 +156,10 @@ def extract_visit_count_from_dbresponse(dbResponse) -> int:
 # I used the 'main' part below when developing/debugging in my local machine.
 # The 'main' part below is not necessary when deploying the code to Lambda.
 '''
+from aws_lambda_powertools.utilities.validation.exceptions import SchemaValidationError
+import sys
+import json # for testing
+
 def main(argv):
     # parse input argument
     try:
