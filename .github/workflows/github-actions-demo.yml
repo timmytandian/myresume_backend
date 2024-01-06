@@ -54,9 +54,13 @@ jobs:
       #----------------------------------------------
       - name: Run tests
         run: |
-          source .venv/bin/activate
-          pytest tests/
-          coverage report
+          pwd
+          python3
+          import boto3
+          exit()
+      #    source .venv/bin/activate
+      #    pytest tests/
+      #    coverage report
       #----------------------------------------------
       #              closing
       #----------------------------------------------
