@@ -4,6 +4,7 @@ on: [push]
 jobs:
   Configure-Poetry-Run-Pytest:
     runs-on: ubuntu-latest
+    
     steps:
       #----------------------------------------------
       #       initial echo for demonstration purpose
@@ -15,6 +16,8 @@ jobs:
       #----------------------------------------------
       - name: Check out repository code
         uses: actions/checkout@v4
+        with:
+          path: '../'
       - name: Set up python
         id: setup-python
         uses: actions/setup-python@v5
