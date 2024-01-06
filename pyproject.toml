@@ -6,7 +6,7 @@ authors = ["pop timmytandian <mail@timmytandian.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.11"
 aws-lambda-powertools = {extras = ["validation"], version = "^2.28.1"}
 fastjsonschema = "^2.19.0"
 
