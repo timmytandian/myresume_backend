@@ -16,8 +16,6 @@ jobs:
       #----------------------------------------------
       - name: Check out repository code
         uses: actions/checkout@v4
-        with:
-          path: '../'
       - name: Set up python
         id: setup-python
         uses: actions/setup-python@v5
@@ -58,12 +56,10 @@ jobs:
       - name: Run tests
         run: |
           pwd
-          python3
-          import boto3
-          exit()
-      #    source .venv/bin/activate
-      #    pytest tests/
-      #    coverage report
+          python3    
+          source .venv/bin/activate
+          pytest tests/
+          coverage report
       #----------------------------------------------
       #              closing
       #----------------------------------------------
