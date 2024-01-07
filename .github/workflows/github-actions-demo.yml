@@ -55,6 +55,7 @@ jobs:
       #----------------------------------------------
       - name: Run tests
         run: |
+          cd ../
           pwd
           python3    
           source .venv/bin/activate
