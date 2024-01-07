@@ -58,7 +58,7 @@ jobs:
           cd ../
           pwd
           python3    
-          source .venv/bin/activate
+          source myresume_backend/.venv/bin/activate
           pytest tests/
           coverage report
       #----------------------------------------------
