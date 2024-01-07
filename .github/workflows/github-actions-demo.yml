@@ -15,7 +15,7 @@ jobs:
       #       check-out repo and set-up python
       #----------------------------------------------
       - name: Clone clone PUBLIC repository
-        uses: GuillaumeFalourd/clone-github-repo-action@v3.1
+        uses: GuillaumeFalourd/clone-github-repo-action@v2.1
         with:
           depth: 1
           branch: 'main'
