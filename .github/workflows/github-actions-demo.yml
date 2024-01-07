@@ -59,7 +59,7 @@ jobs:
           pwd
           python3    
           source myresume_backend/.venv/bin/activate
-          pytest tests/
+          pytest
           coverage report
       #----------------------------------------------
       #              closing
