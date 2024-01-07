@@ -14,8 +14,13 @@ jobs:
       #----------------------------------------------
       #       check-out repo and set-up python
       #----------------------------------------------
-      - name: Check out repository code
-        uses: actions/checkout@v4
+      - name: Clone clone PUBLIC repository
+        uses: GuillaumeFalourd/clone-github-repo-action@v3.1
+        with:
+          depth: 1
+          branch: 'main'
+          owner: 'timmytandian'
+          repository: 'myresume_backend'
       - name: Set up python
         id: setup-python
         uses: actions/setup-python@v5
@@ -55,10 +60,10 @@ jobs:
       #----------------------------------------------
       - name: Run tests
         run: |
-          cd ../
+          uses: actions/setup-python@v5
+          cd /
           pwd
-          python3    
-          source myresume_backend/.venv/bin/activate
+          source .venv/bin/activate
           pytest
           coverage report
       #----------------------------------------------
