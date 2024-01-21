@@ -68,9 +68,11 @@ jobs:
       #----------------------------------------------
       - name: Run tests
         run: |
-          source .venv/bin/activate
           pytest
           coverage report
+      #    source .venv/bin/activate
+      #    pytest
+      #    coverage report
       #----------------------------------------------
       #              closing
       #----------------------------------------------
