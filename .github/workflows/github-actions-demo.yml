@@ -68,8 +68,6 @@ jobs:
       #----------------------------------------------
       - name: Run tests
         run: |
-          cd /
-          pwd
           source .venv/bin/activate
           pytest
           coverage report
