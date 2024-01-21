@@ -11,6 +11,9 @@ jobs:
       #----------------------------------------------
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
       - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+      - run: |
+          pwd
+          ls
       #----------------------------------------------
       #       check-out repo and set-up python
       #----------------------------------------------
@@ -65,7 +68,6 @@ jobs:
       #----------------------------------------------
       - name: Run tests
         run: |
-          uses: actions/setup-python@v5
           cd /
           pwd
           source .venv/bin/activate
