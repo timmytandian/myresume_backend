@@ -18,7 +18,6 @@ jobs:
         uses: GuillaumeFalourd/clone-github-repo-action@v2.1
         with:
           depth: 1
-          branch: 'main'
           owner: 'timmytandian'
           repository: 'myresume_backend'
       - name: Set up python
