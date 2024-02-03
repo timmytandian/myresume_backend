@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "myresume-backend"
+name = "myresume_backend"
 version = "0.1.0"
 description = "implementation of the backend for my cloud resume"
 authors = ["pop timmytandian <mail@timmytandian.com>"]
