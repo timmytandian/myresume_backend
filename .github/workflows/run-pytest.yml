@@ -1,0 +1,86 @@
+name: run pytest on backend
+run-name: ${{ github.actor }} is going to run pytest 🚀
+on: [workflow_dispatch, push]
+jobs:
+  Configure-Poetry-Run-Pytest:
+    runs-on: ubuntu-latest
+
+    steps:
+      #----------------------------------------------
+      #  check-out repo and preview the path
+      #----------------------------------------------
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - name: Run pwd and ls
+        run: |
+          pwd
+          ls
+      #----------------------------------------------
+      #  initialize variable
+      #----------------------------------------------
+      - name: Set variable value
+        id: set_PROJECT_NAME
+        run: |
+          echo "PROJECT_NAME=${GITHUB_REPOSITORY#*/}" >> "$GITHUB_ENV"
+      - name: Use variable value
+        id: get_PROJECT_NAME
+        run: |
+          printf 'the project name is: %s\n' "$PROJECT_NAME"
+      #----------------------------------------------
+      #  install python & configure poetry
+      #----------------------------------------------
+      - name: Set up python
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      #----------------------------------------------
+      #       load cached venv if cache exists
+      #----------------------------------------------
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+      #----------------------------------------------
+      # install dependencies if cache does not exist
+      #----------------------------------------------
+      #- name: Install dependencies
+      #iif: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      #  run: poetry install --no-interaction --no-root
+      #----------------------------------------------
+      # install your root project, if required
+      #----------------------------------------------
+      - name: Install project
+        run: |
+          pwd
+          ls
+          poetry install --no-interaction
+      #----------------------------------------------
+      #              run test suite
+      #----------------------------------------------
+      - name: Run tests
+        run: |
+          pwd
+          ls
+          poetry env list
+          poetry env list --full-path
+          poetry env info --executable
+          ls .venv/bin
+          source .venv/bin/activate
+          python -m pytest
+      #    coverage report
+      #    source .venv/bin/activate
+      #    pytest
+      #    coverage report
+      #----------------------------------------------
+      #              closing
+      #----------------------------------------------
+      - run: echo "🍏 This job's status is ${{ job.status }}."
