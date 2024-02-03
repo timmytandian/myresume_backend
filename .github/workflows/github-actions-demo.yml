@@ -1,6 +1,6 @@
 name: GitHub Actions Demo (poetry and pytest)
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
-on: [push]
+on: [workflow_dispatch, pull_request]
 jobs:
   Configure-Poetry-Run-Pytest:
     runs-on: ubuntu-latest
@@ -68,7 +68,9 @@ jobs:
       #----------------------------------------------
       - name: Run tests
         run: |
-          pytest
+          echo ::set-env name=PROJECT_NAME::${GITHUB_REPOSITORY#*/}
+          source .venv/$PROJECT_NAME/bin/activate
+          python -m pytest
           coverage report
       #    source .venv/bin/activate
       #    pytest
