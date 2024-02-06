@@ -1,5 +1,5 @@
 name: run pytest on backend
-run-name: ${{ github.actor }} is going to run pytest 🚀
+run-name: ${{ github.actor }} run the action in ${{ github.ref_name }} after making a ${{ github.event_name }}
 on: [workflow_dispatch, push]
 jobs:
   Configure-Poetry-Run-Pytest:
@@ -52,9 +52,9 @@ jobs:
       #----------------------------------------------
       # install dependencies if cache does not exist
       #----------------------------------------------
-      #- name: Install dependencies
-      #iif: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      #  run: poetry install --no-interaction --no-root
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
       #----------------------------------------------
       # install your root project, if required
       #----------------------------------------------
@@ -75,7 +75,7 @@ jobs:
           poetry env info --executable
           ls .venv/bin
           source .venv/bin/activate
-          python -m pytest
+          python -m pytest /tests
       #    coverage report
       #    source .venv/bin/activate
       #    pytest
