@@ -26,6 +26,10 @@ jobs:
         id: get_PROJECT_NAME
         run: |
           printf 'the project name is: %s\n' "$PROJECT_NAME"
+      - name: Check repository's variable
+        id: check_DYNAMODB_TABLE_NAME
+        run: |
+          echo "the value of DYNAMODB_TABLE_NAME is ${{ vars.DYNAMODB_TABLE_NAME }}"
       #----------------------------------------------
       #  install python & configure poetry
       #----------------------------------------------
