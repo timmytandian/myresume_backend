@@ -1,5 +1,5 @@
 name: run pytest on backend
-run-name: ${{ github.actor }} run the action in ${{ github.ref_name }} after making a ${{ github.event_name }}
+run-name: ACTOR ${{ github.actor }} - BRANCH ${{ github.ref_name }} - EVENT ${{ github.event_name }}
 on: [workflow_dispatch, push]
 jobs:
   Configure-Poetry-Run-Pytest:
@@ -79,7 +79,7 @@ jobs:
           poetry env info --executable
           ls .venv/bin
           source .venv/bin/activate
-          python -m pytest /tests
+          python -m pytest tests/
       #    coverage report
       #    source .venv/bin/activate
       #    pytest
