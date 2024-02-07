@@ -14,6 +14,7 @@ from myresume_backend.lambda_function import lambda_handler
 from myresume_backend.lambda_function import extract_visit_count_from_dbresponse
 from myresume_backend.lambda_function import getVisitorsCount
 from myresume_backend.lambda_function import addOneVisitorCount  # pylint: disable=wrong-import-position
+from myresume_backend.lambda_function import _AWS_REGION  # pylint: disable=wrong-import-position
 from myresume_backend.schemas import INPUT_SCHEMA                     # pylint: disable=wrong-import-position
 
 # Mock all AWS Services in use
@@ -34,7 +35,7 @@ class TestLambdaFunction(TestCase):
         os.environ["DYNAMODB_TABLE_NAME"] = self.test_ddb_table_name
         
         # Set up the services: construct a (mocked!) DynamoDB table
-        dynamodb = resource("dynamodb", region_name="ap-northeast-1")
+        dynamodb = resource("dynamodb", region_name=_AWS_REGION)
         dynamodb.create_table(
             TableName = self.test_ddb_table_name,
             KeySchema=[{"AttributeName": "pkey_uuid", "KeyType": "HASH"}],
@@ -43,8 +44,8 @@ class TestLambdaFunction(TestCase):
             )
 
         # Establish the "GLOBAL" environment for use in tests.
-        mocked_dynamodb_resource = resource("dynamodb")
-        mocked_dynamodb_resource = { "resource" : resource('dynamodb'),
+        #mocked_dynamodb_resource = resource("dynamodb")
+        mocked_dynamodb_resource = { "resource" : resource('dynamodb', region_name=_AWS_REGION),
                                      "table_name" : self.test_ddb_table_name  }
         self.mocked_dynamodb_class = LambdaDynamoDBClass(mocked_dynamodb_resource)
 
@@ -246,5 +247,5 @@ class TestLambdaFunction(TestCase):
 
     def tearDown(self) -> None:
         # Remove (mocked!) DynamoDB Table
-        dynamodb_resource = client("dynamodb", region_name="ap-northeast-1")
+        dynamodb_resource = client("dynamodb", region_name=_AWS_REGION)
         dynamodb_resource.delete_table(TableName = self.test_ddb_table_name )
