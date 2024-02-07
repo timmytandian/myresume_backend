@@ -16,7 +16,7 @@ from schemas import INPUT_SCHEMA, OUTPUT_SCHEMA
 
 # Prepare globally scoped resources
 # Initialize the resources once per Lambda execution environment by using global scope.
-_LAMBDA_DYNAMODB_RESOURCE = { "resource" : resource('dynamodb'), 
+_LAMBDA_DYNAMODB_RESOURCE = { "resource" : resource('dynamodb', region_name='ap-northeast-1'), 
                               "table_name" : environ.get("DYNAMODB_TABLE_NAME","NONE") }
 
 # A custom class to catch error when 
