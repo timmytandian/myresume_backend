@@ -89,6 +89,14 @@ jobs:
           pwd
           poetry build --format wheel
           ls
+      - name: Make lambda layer folder
+        run: mkdir -p aws_layer/python/lib/python3.11/site-packages
+      - name: Packaging using pip install
+        run: |
+          poetry run pip install --upgrade --only-binary :all: --platform linux_x86_64 --target aws_layer/python/lib/python3.11/site-packages dist/*.whl
+      - name: Compress into zip
+        run: |
+          cd aws_layer; zip -r9 artifact.zip . -x '*.pyc'
       
 
       #----------------------------------------------
