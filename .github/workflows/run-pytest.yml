@@ -2,7 +2,7 @@ name: backend CI/CD
 run-name: ACTOR ${{ github.actor }} - BRANCH ${{ github.ref_name }} - EVENT ${{ github.event_name }}
 on: [workflow_dispatch, push]
 jobs:
-  Configure-Poetry-Run-Pytest:
+  InstallPoetry-RunPytest-BuildLambdaLayer:
     runs-on: ubuntu-latest
 
     steps:
@@ -80,23 +80,18 @@ jobs:
           ls .venv/bin
           source .venv/bin/activate
           python -m pytest tests/
-      #    coverage report
-      #    source .venv/bin/activate
-      #    pytest
-      #    coverage report
+      
+      #----------------------------------------------
+      #              build lambda layer
+      #----------------------------------------------
+      - name: Build wheel package
+        run: | 
+          pwd
+          poetry build --format wheel
+          ls
+      
+
       #----------------------------------------------
       #              closing
       #----------------------------------------------
       - run: echo "🍏 This job's status is ${{ job.status }}."
-  
-  Build-Lambda-Layer:
-    runs-on: ubuntu-latest
-    needs: Configure-Poetry-Run-Pytest
-    steps:
-      #----------------------------------------------
-      #  check-out repo and preview the path
-      #----------------------------------------------
-      - name: Run pwd and ls
-        run: |
-          pwd
-          ls
