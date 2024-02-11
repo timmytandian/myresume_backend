@@ -97,9 +97,40 @@ jobs:
       - name: Compress into zip
         run: |
           cd aws_layer; zip -r9 artifact.zip . -x '*.pyc'
-      
+          cd ..
+          pwd
+          ls
+      - name: Upload the artifact.zip for the next job
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-layer
+          path: aws_layer/artifact.zip
 
       #----------------------------------------------
       #              closing
       #----------------------------------------------
       - run: echo "🍏 This job's status is ${{ job.status }}."
+  
+  PublishLambdaLayer:
+    runs-on: ubuntu-latest
+    needs: InstallPoetry-RunPytest-BuildLambdaLayer
+
+    steps:
+      #----------------------------------------------
+      #  Artifact download, publish to AWS Lambda Layer
+      #----------------------------------------------
+      - name: Download the artifact.zip
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-layer
+      - name: Publish Layer
+        uses: theserverfault/aws-lambda-layer-release-action@v0.0
+        with:
+          access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          layer_name: myresume_backend_layer_from_github_action
+          archive: artifact.zip
+          architectures: x86_64
+          runtimes: python3.11
+          s3_bucket: myresume-backend-layers-bucket
+          functions: dynamodb-resume_visitor-api_http-counts
