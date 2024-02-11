@@ -130,7 +130,7 @@ jobs:
           secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           layer_name: myresume_backend_layer_from_github_action
           archive: artifact.zip
-          architectures: x86_64
-          runtimes: python3.11
-          s3_bucket: myresume-backend-layers-bucket
-          functions: dynamodb-resume_visitor-api_http-counts
+          architectures: '["x86_64"]'
+          runtimes: '["python3.11"]'
+          s3_bucket: 'myresume-backend-layers-bucket'
+          functions: '["dynamodb-resume_visitor-api_http-counts"]'
