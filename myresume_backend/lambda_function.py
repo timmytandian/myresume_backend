@@ -96,6 +96,7 @@ def getVisitorsCount( dynamo_db: LambdaDynamoDBClass,
         body = "ERROR: " + str(other_error)
         status_code = 500
     finally:
+        print("this is from ci/cd.")
         print(body)
         return {"statusCode": status_code, "body" : body }
 
