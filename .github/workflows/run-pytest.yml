@@ -82,10 +82,10 @@ jobs:
           python -m pytest tests/
       
       #----------------------------------------------
-      #              build lambda layer
+      #              build dependencies lambda layer
       #----------------------------------------------
       - name: Build wheel package
-        run: | 
+        run: |
           pwd
           poetry build --format wheel
           ls
