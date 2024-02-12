@@ -158,3 +158,5 @@ jobs:
       - name: Deploy zip as new layer version
         run: |
           aws lambda publish-layer-version --layer-name myresume_backend_layer_from_github_action --description "A layer published from github action myresume_backend" --zip-file fileb://artifact.zip --compatible-runtimes python3.11
+          LAYER_VERSION_ARN=$(aws lambda list-layer-versions --layer-name myresume_backend_layer_from_github_action --query 'LayerVersions[0].LayerVersionArn' --output text)
+          aws lambda update-function-configuration --function-name dynamodb-resume_visitor-api_http-counts --layers $LAYER_VERSION_ARN 
