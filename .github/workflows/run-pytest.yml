@@ -107,37 +107,63 @@ jobs:
           path: aws_layer/artifact.zip
 
       #----------------------------------------------
+      #  Publish main code to S3
+      #----------------------------------------------
+      - name: Setup AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-1
+      - name: Deploy modified file
+        run: |
+          # Constants
+          S3_BUCKET=${{ vars.S3_BUCKET }}
+          S3_KEY="myresume_backend.zip"
+          LAMBDA_FUNCTION_NAME=${{ vars.LAMBDA_FUNCTION_NAME }}
+          
+          # Download the existing zip from S3
+          aws s3 cp s3://$S3_BUCKET/$S3_KEY existing_lambda.zip
+          
+          # Unzip the existing package
+          unzip existing_lambda.zip -d lambda_env
+          
+          # Copy only the modified .py files from the commit into the unzipped directory
+          # This will maintain their directory structure.
+          for file in $(git diff-tree --no-commit-id --name-only -r HEAD); do
+              if [[ $file == *.py ]]; then
+                  # Create the directory structure in lambda_env for the modified file
+                  mkdir -p lambda_env/$(dirname $file)
+                  # Copy the modified file
+                  cp $file lambda_env/$file
+                  # Print what you've done with the file
+                  echo "Copied $file to lambda_env/$file"
+                  echo "Content of $file after copying:"
+                  cat lambda_env/$file
+              fi
+          done
+          
+          # Zip the directory again
+          cd lambda_env
+          zip -r ../updated_lambda.zip .
+          cd ..
+          
+          # Upload the updated zip to S3
+          aws s3 cp updated_lambda.zip s3://$S3_BUCKET/$S3_KEY
+          
+          # Update Lambda function code
+          aws lambda update-function-code --function-name $LAMBDA_FUNCTION_NAME --s3-bucket $S3_BUCKET --s3-key $S3_KEY
+          
+          # Cleanup
+          rm -r lambda_env
+          rm existing_lambda.zip updated_lambda.zip
+      
+      #----------------------------------------------
       #              closing
       #----------------------------------------------
       - run: echo "🍏 This job's status is ${{ job.status }}."
   
-  PublishLambdaLayer-1:
-    runs-on: ubuntu-latest
-    needs: InstallPoetry-RunPytest-BuildLambdaLayer
-    if: github.repository == 'octo-org/octo-repo-prod'
-
-    steps:
-      #----------------------------------------------
-      #  Artifact download, publish to AWS Lambda Layer
-      #----------------------------------------------
-      - name: Download the artifact.zip
-        uses: actions/download-artifact@v4
-        with:
-          name: lambda-layer
-      - name: Publish Layer
-        uses: theserverfault/aws-lambda-layer-release-action@v0.0
-        with:
-          access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          layer_name: myresume_backend_layer_from_github_action
-          archive: artifact.zip
-          region: 'ap-northeast-1'
-          architectures: '["x86_64"]'
-          runtimes: '["python3.11"]'
-          s3_bucket: 'myresume-backend-layers-bucket'
-          functions: '["dynamodb-resume_visitor-api_http-counts"]'
-
-  PublishLambdaLayer-2:
+  DeployLambdaLayer:
     runs-on: ubuntu-latest
     needs: InstallPoetry-RunPytest-BuildLambdaLayer
 
@@ -159,4 +185,4 @@ jobs:
         run: |
           aws lambda publish-layer-version --layer-name myresume_backend_layer_from_github_action --description "A layer published from github action myresume_backend" --zip-file fileb://artifact.zip --compatible-runtimes python3.11
           LAYER_VERSION_ARN=$(aws lambda list-layer-versions --layer-name myresume_backend_layer_from_github_action --query 'LayerVersions[0].LayerVersionArn' --output text)
-          aws lambda update-function-configuration --function-name dynamodb-resume_visitor-api_http-counts --layers $LAYER_VERSION_ARN 
+          aws lambda update-function-configuration --function-name ${{ vars.S3_BUCKET }} --layers $LAYER_VERSION_ARN 
