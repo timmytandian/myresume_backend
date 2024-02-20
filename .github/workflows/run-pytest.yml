@@ -4,7 +4,9 @@ on: [workflow_dispatch, push]
 jobs:
   InstallPoetry-RunPytest-BuildLambdaLayer:
     runs-on: ubuntu-latest
-
+    outputs:
+      dependencies-changed-flag: ${{ steps.path-filter.outputs.poetlock }}
+    
     steps:
       #----------------------------------------------
       #  check-out repo and preview the path
@@ -158,6 +160,13 @@ jobs:
           rm -r lambda_env
           rm existing_lambda.zip updated_lambda.zip
       
+
+      - uses: dorny/paths-filter@v3
+        id: path-filter
+        with:
+          filters: |
+            poetlock:
+              - 'poetry.lock'
       #----------------------------------------------
       #              closing
       #----------------------------------------------
@@ -166,7 +175,7 @@ jobs:
   DeployLambdaLayer:
     runs-on: ubuntu-latest
     needs: InstallPoetry-RunPytest-BuildLambdaLayer
-
+    if: ${{ needs.InstallPoetry-RunPytest-BuildLambdaLayer.outputs.dependencies-changed-flag == 'true' }}
     steps:
       #----------------------------------------------
       #  Artifact download, publish to AWS Lambda Layer
