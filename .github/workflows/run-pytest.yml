@@ -176,7 +176,7 @@ jobs:
         with:
           name: lambda-layer
       - name: Setup AWS CLI
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -185,4 +185,4 @@ jobs:
         run: |
           aws lambda publish-layer-version --layer-name myresume_backend_layer_from_github_action --description "A layer published from github action myresume_backend" --zip-file fileb://artifact.zip --compatible-runtimes python3.11
           LAYER_VERSION_ARN=$(aws lambda list-layer-versions --layer-name myresume_backend_layer_from_github_action --query 'LayerVersions[0].LayerVersionArn' --output text)
-          aws lambda update-function-configuration --function-name ${{ vars.S3_BUCKET }} --layers $LAYER_VERSION_ARN 
+          aws lambda update-function-configuration --function-name ${{ vars.LAMBDA_FUNCTION_NAME }} --layers $LAYER_VERSION_ARN 
