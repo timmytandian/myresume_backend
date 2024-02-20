@@ -110,7 +110,7 @@ jobs:
       #  Publish main code to S3
       #----------------------------------------------
       - name: Setup AWS CLI
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -119,7 +119,7 @@ jobs:
         run: |
           # Constants
           S3_BUCKET=${{ vars.S3_BUCKET }}
-          S3_KEY="myresume_backend.zip"
+          S3_KEY="code.zip"
           LAMBDA_FUNCTION_NAME=${{ vars.LAMBDA_FUNCTION_NAME }}
           
           # Download the existing zip from S3
