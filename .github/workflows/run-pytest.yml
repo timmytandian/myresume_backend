@@ -5,7 +5,7 @@ jobs:
   InstallPoetry-RunPytest-BuildLambdaLayer:
     runs-on: ubuntu-latest
     outputs:
-      dependencies-changed-flag: ${{ steps.path-filter.outputs.poetlock }}
+      is-poetlock-changed: ${{ steps.paths-filter.outputs.isPoetlockChanged }}
     
     steps:
       #----------------------------------------------
@@ -162,10 +162,10 @@ jobs:
       
 
       - uses: dorny/paths-filter@v3
-        id: path-filter
+        id: paths-filter
         with:
           filters: |
-            poetlock:
+            isPoetlockChanged:
               - 'poetry.lock'
       #----------------------------------------------
       #              closing
@@ -175,7 +175,7 @@ jobs:
   DeployLambdaLayer:
     runs-on: ubuntu-latest
     needs: InstallPoetry-RunPytest-BuildLambdaLayer
-    if: ${{ needs.InstallPoetry-RunPytest-BuildLambdaLayer.outputs.dependencies-changed-flag == 'true' }}
+    if: ${{ needs.InstallPoetry-RunPytest-BuildLambdaLayer.outputs.is-poetlock-changed == 'true' }}
     steps:
       #----------------------------------------------
       #  Artifact download, publish to AWS Lambda Layer
