@@ -109,6 +109,30 @@ jobs:
           path: aws_layer/artifact.zip
 
       #----------------------------------------------
+      #  Figure out if poetry.lock has been changed
+      #----------------------------------------------
+      - uses: dorny/paths-filter@v3
+        id: paths-filter
+        with:
+          filters: |
+            isPoetlockChanged:
+              - 'poetry.lock'
+      #----------------------------------------------
+      #              closing
+      #----------------------------------------------
+      - run: echo "🍏 This job's status is ${{ job.status }}."
+  
+  DeployCodeToS3:
+    runs-on: ubuntu-latest
+    needs: InstallPoetry-RunPytest-BuildLambdaLayer
+    steps:
+      #----------------------------------------------
+      #  check-out repo and preview the path
+      #----------------------------------------------
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      
+      #----------------------------------------------
       #  Publish main code to S3
       #----------------------------------------------
       - name: Setup AWS CLI
@@ -159,19 +183,7 @@ jobs:
           # Cleanup
           rm -r lambda_env
           rm existing_lambda.zip updated_lambda.zip
-      
 
-      - uses: dorny/paths-filter@v3
-        id: paths-filter
-        with:
-          filters: |
-            isPoetlockChanged:
-              - 'poetry.lock'
-      #----------------------------------------------
-      #              closing
-      #----------------------------------------------
-      - run: echo "🍏 This job's status is ${{ job.status }}."
-  
   DeployLambdaLayer:
     runs-on: ubuntu-latest
     needs: InstallPoetry-RunPytest-BuildLambdaLayer
