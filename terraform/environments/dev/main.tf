@@ -20,6 +20,7 @@ module "dynamodb" {
   source              = "../../modules/dynamodb"
   env                 = local.env
   dyanmodb_table_name = "cloud_resume"
+  //is_initialize_table_item = false
 }
 
 /*

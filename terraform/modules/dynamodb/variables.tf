@@ -12,6 +12,12 @@ variable "env" {
   type        = string
 }
 
+/*
+variable "is_initialize_table_item" {
+  description = "whether to initialize the dynamodb table item or not"
+  type = bool
+}*/
+
 # ---------------------------------------------------------------------------------------------------------------------
 # OPTIONAL PARAMETERS
 # These parameters have reasonable defaults.
