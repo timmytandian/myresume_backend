@@ -18,18 +18,20 @@ resource "aws_dynamodb_table" "visitors_count_db" {
   }
 }
 
-/*
+
+# TODO: clean up comments.
+
 # Try to check if the uuid of home already existed or not
 data "aws_dynamodb_table_item" "visitors_count" {
   table_name = aws_dynamodb_table.visitors_count_db.name
   key = <<KEY
 {
-    "pkey_uuid": {"S": "08fc4e15-90c4-5611-e95c-05d7e4aa34e2"},
+    "pkey_uuid": {"S": "250808e1-38f9-2c29-90b9-5146319be0c3"}
 }
 KEY
 
   # This will cause the data source to fail if the bucket doesn't exist
-  count = length(aws_dynamodb_table_item.visit_count) == 0 ? 1 : 0
+  //count = length(aws_dynamodb_table_item.visit_count) == 0 ? 1 : 0
 }
 
 # Try to check if the uuid of home already existed or not
@@ -37,14 +39,23 @@ data "aws_dynamodb_table_item" "unique_home_page_name" {
   table_name = aws_dynamodb_table.visitors_count_db.name
   key = <<KEY
 {
-    "pkey_uuid": {"S": "page_name#home"},
+    "pkey_uuid": {"S": "page_name#home"}
 }
 KEY
 
   # This will cause the data source to fail if the bucket doesn't exist
-  count = length(aws_dynamodb_table_item.unique_home_page_name) == 0 ? 1 : 0
-}*/
+  //count = length(aws_dynamodb_table_item.unique_home_page_name) == 0 ? 1 : 0
+}
 
+locals {
+  item_data = jsondecode(data.aws_dynamodb_table_item.visitors_count.item)
+  pkey_uuid = try(local.item_data.pkey_uuid.S, "")
+  page_name = try(local.item_data.page_name.S, "")
+  visit_count = try(local.item_data.visit_count.N, 0)
+}
+
+
+/*
 # Initialize Random UUID to be used as the home pkey_uuid
 resource "random_uuid" "home_pkey_uuid" {
   # Only create if the is_initialize_table_item is true
@@ -82,4 +93,4 @@ ITEM
 
   # Only create if the is_initialize_table_item is true
   //count = var.is_initialize_table_item ? 1 : 0
-}
+}*/
