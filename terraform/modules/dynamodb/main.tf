@@ -1,3 +1,11 @@
+# NOTE: the configuration of random_uuid and 2 aws_dynamodb_table_item are applied only once,
+# only applied when we initialize the Dynamo DB table. After the initialization finished, 
+# we should remove them from the terraform state file. Command:
+#   terraform state list // to list all resources managed by the state file
+#   terraform state rm RESOURCE.ADDRESS // to remove the target resource
+# After the removal finished, we should track the pkey_uuid as data resource (as output)
+# so its value can be used in other modules.
+
 resource "aws_dynamodb_table" "visitors_count_db" {
   name                        = "${var.dyanmodb_table_name}${var.env == "prod" ? "" : "_${var.env}"}"
   billing_mode                = "PAY_PER_REQUEST"
@@ -10,7 +18,7 @@ resource "aws_dynamodb_table" "visitors_count_db" {
   }
 }
 
-
+/*
 # Try to check if the uuid of home already existed or not
 data "aws_dynamodb_table_item" "visitors_count" {
   table_name = aws_dynamodb_table.visitors_count_db.name
@@ -35,11 +43,12 @@ KEY
 
   # This will cause the data source to fail if the bucket doesn't exist
   count = length(aws_dynamodb_table_item.unique_home_page_name) == 0 ? 1 : 0
-}
+}*/
 
 # Initialize Random UUID to be used as the home pkey_uuid
 resource "random_uuid" "home_pkey_uuid" {
-  count = length(data.aws_dynamodb_table_item.visitors_count) == 0 ? 1 : 0
+  # Only create if the is_initialize_table_item is true
+  //count = var.is_initialize_table_item ? 1 : 0
 }
 
 # Initialize the table item that represent the visitor count
@@ -55,9 +64,8 @@ resource "aws_dynamodb_table_item" "visit_count" {
 }
 ITEM
 
-  # Only create if the data source failed 
-  # i.e., "aws_dynamodb_table_item.visitors_count" doesn't exist
-  count = length(data.aws_dynamodb_table_item.visit_count) == 0 ? 1 : 0
+  # Only create if the is_initialize_table_item is true
+  //count = var.is_initialize_table_item ? 1 : 0
   depends_on = [random_uuid.home_pkey_uuid]
 }
 
@@ -72,7 +80,6 @@ resource "aws_dynamodb_table_item" "unique_home_page_name" {
 }
 ITEM
 
-  # Only create if the data source failed 
-  # i.e., "aws_dynamodb_table_item.visitors_count" doesn't exist
-  count = length(data.aws_dynamodb_table_item.unique_home_page_name) == 0 ? 1 : 0
+  # Only create if the is_initialize_table_item is true
+  //count = var.is_initialize_table_item ? 1 : 0
 }
