@@ -6,6 +6,8 @@
 # After the removal finished, we should track the pkey_uuid as data resource (as output)
 # so its value can be used in other modules.
 
+
+# DYNAMO DB TABLE
 resource "aws_dynamodb_table" "visitors_count_db" {
   name                        = "${var.dyanmodb_table_name}${var.env == "prod" ? "" : "_${var.env}"}"
   billing_mode                = "PAY_PER_REQUEST"
@@ -18,10 +20,7 @@ resource "aws_dynamodb_table" "visitors_count_db" {
   }
 }
 
-
-# TODO: clean up comments.
-
-# Try to check if the uuid of home already existed or not
+# TABLE ITEM to track visitor count (NOT MANAGED IN TERRAFORM)
 data "aws_dynamodb_table_item" "visitors_count" {
   table_name = aws_dynamodb_table.visitors_count_db.name
   key = <<KEY
@@ -29,12 +28,9 @@ data "aws_dynamodb_table_item" "visitors_count" {
     "pkey_uuid": {"S": "250808e1-38f9-2c29-90b9-5146319be0c3"}
 }
 KEY
-
-  # This will cause the data source to fail if the bucket doesn't exist
-  //count = length(aws_dynamodb_table_item.visit_count) == 0 ? 1 : 0
 }
 
-# Try to check if the uuid of home already existed or not
+# TABLE ITEM to make sure page_name is unique (NOT MANAGED IN TERRAFORM)
 data "aws_dynamodb_table_item" "unique_home_page_name" {
   table_name = aws_dynamodb_table.visitors_count_db.name
   key = <<KEY
@@ -42,11 +38,9 @@ data "aws_dynamodb_table_item" "unique_home_page_name" {
     "pkey_uuid": {"S": "page_name#home"}
 }
 KEY
-
-  # This will cause the data source to fail if the bucket doesn't exist
-  //count = length(aws_dynamodb_table_item.unique_home_page_name) == 0 ? 1 : 0
 }
 
+# Local variable as output of this module
 locals {
   item_data = jsondecode(data.aws_dynamodb_table_item.visitors_count.item)
   pkey_uuid = try(local.item_data.pkey_uuid.S, "")
@@ -56,13 +50,16 @@ locals {
 
 
 /*
-# Initialize Random UUID to be used as the home pkey_uuid
+# NOTE: As mentioned above, the configuration of 3 resources below
+# should be applied only once as initialization. After the initialization finished, 
+# we should remove them from the terraform state file.
+
+# RESOURCE #1: Random UUID
 resource "random_uuid" "home_pkey_uuid" {
-  # Only create if the is_initialize_table_item is true
-  //count = var.is_initialize_table_item ? 1 : 0
+
 }
 
-# Initialize the table item that represent the visitor count
+# RESOURCE #2: The table item that represent the visitor count
 resource "aws_dynamodb_table_item" "visit_count" {
   table_name = aws_dynamodb_table.visitors_count_db.name
   hash_key   = aws_dynamodb_table.visitors_count_db.hash_key
@@ -75,12 +72,10 @@ resource "aws_dynamodb_table_item" "visit_count" {
 }
 ITEM
 
-  # Only create if the is_initialize_table_item is true
-  //count = var.is_initialize_table_item ? 1 : 0
   depends_on = [random_uuid.home_pkey_uuid]
 }
 
-# Initialize a table item to make sure that "home" value in "page_name" column is unique
+# RESOURCE #3: Table item to make sure that "home" value in "page_name" column is unique
 resource "aws_dynamodb_table_item" "unique_home_page_name" {
   table_name = aws_dynamodb_table.visitors_count_db.name
   hash_key   = aws_dynamodb_table.visitors_count_db.hash_key
@@ -91,6 +86,4 @@ resource "aws_dynamodb_table_item" "unique_home_page_name" {
 }
 ITEM
 
-  # Only create if the is_initialize_table_item is true
-  //count = var.is_initialize_table_item ? 1 : 0
 }*/
