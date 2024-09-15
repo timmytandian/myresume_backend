@@ -23,7 +23,7 @@ resource "aws_dynamodb_table" "visitors_count_db" {
 # TABLE ITEM to track visitor count (NOT MANAGED IN TERRAFORM)
 data "aws_dynamodb_table_item" "visitors_count" {
   table_name = aws_dynamodb_table.visitors_count_db.name
-  key = <<KEY
+  key        = <<KEY
 {
     "pkey_uuid": {"S": "250808e1-38f9-2c29-90b9-5146319be0c3"}
 }
@@ -33,7 +33,7 @@ KEY
 # TABLE ITEM to make sure page_name is unique (NOT MANAGED IN TERRAFORM)
 data "aws_dynamodb_table_item" "unique_home_page_name" {
   table_name = aws_dynamodb_table.visitors_count_db.name
-  key = <<KEY
+  key        = <<KEY
 {
     "pkey_uuid": {"S": "page_name#home"}
 }
@@ -42,9 +42,9 @@ KEY
 
 # Local variable as output of this module
 locals {
-  item_data = jsondecode(data.aws_dynamodb_table_item.visitors_count.item)
-  pkey_uuid = try(local.item_data.pkey_uuid.S, "")
-  page_name = try(local.item_data.page_name.S, "")
+  item_data   = jsondecode(data.aws_dynamodb_table_item.visitors_count.item)
+  pkey_uuid   = try(local.item_data.pkey_uuid.S, "")
+  page_name   = try(local.item_data.page_name.S, "")
   visit_count = try(local.item_data.visit_count.N, 0)
 }
 
