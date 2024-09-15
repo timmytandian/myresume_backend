@@ -31,21 +31,21 @@ data "archive_file" "lambda_code" {
   type        = "zip"
   output_path = "/tmp/myresume_backend/lambda_code.zip"
   source_dir  = "${path.module}/../../../myresume_backend"
-  excludes    = [
+  excludes = [
     "__pycache__",
     ".pytest_cache",
   ]
 }
 
 resource "aws_lambda_function" "lambda_code" {
-  function_name = "${var.lambda_code_function_name}${var.env == "prod" ? "" : "_${var.env}"}"
-  description = "[main_use, ${var.env}] This function reads and updates DynamoDB cloud_resume table. Connected with API Gateway HTTP API at the front. API route: /counts/{page-id}."
-  filename         = "${data.archive_file.lambda_code.output_path}"
-  source_code_hash = "${data.archive_file.lambda_code.output_base64sha256}"
+  function_name    = "${var.lambda_code_function_name}${var.env == "prod" ? "" : "_${var.env}"}"
+  description      = "[main_use, ${var.env}] This function reads and updates DynamoDB cloud_resume table. Connected with API Gateway HTTP API at the front. API route: /counts/{page-id}."
+  filename         = data.archive_file.lambda_code.output_path
+  source_code_hash = data.archive_file.lambda_code.output_base64sha256
 
   handler = "lambda_function.lambda_handler"
   runtime = "python3.11"
-  role    = "${aws_iam_role.lambda_code.arn}"
+  role    = aws_iam_role.lambda_code.arn
 
   environment {
     variables = {
