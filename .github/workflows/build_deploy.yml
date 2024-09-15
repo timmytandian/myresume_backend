@@ -190,7 +190,7 @@ jobs:
         run: |
           if [ -d "environments/${{ github.ref_name }}/" ]; then
             cd environments/${{ github.ref_name }}
-            terraform plan -var-file="secret.tfvars"
+            terraform plan
           else
             for dir in environments/*/
             do 
