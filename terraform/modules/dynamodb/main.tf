@@ -25,7 +25,7 @@ data "aws_dynamodb_table_item" "visitors_count" {
   table_name = aws_dynamodb_table.visitors_count_db.name
   key = <<KEY
 {
-    "pkey_uuid": {"S": "250808e1-38f9-2c29-90b9-5146319be0c3"}
+    "pkey_uuid": {"S": "6632d5b4-5655-4c48-b7b6-071d5823c888"}
 }
 KEY
 }
