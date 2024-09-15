@@ -122,7 +122,148 @@ jobs:
       #----------------------------------------------
       - run: echo "🍏 This job's status is ${{ job.status }}."
   
+
+
+  DeployWithTerraform:
+    runs-on: ubuntu-latest
+    needs: InstallPoetry-RunPytest-BuildLambdaLayer
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}      
+    defaults:
+      run:
+        working-directory: terraform/
+    steps:
+      #----------------------------------------------
+      #  Initial setup and Terraform format check
+      #----------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+          terraform_wrapper: false
+          
+      - name: Terraform Format
+        id: tf_fmt
+        run: |
+          terraform fmt -check
+          terraform fmt -check modules/api_gateway/* 
+          terraform fmt -check modules/dynamodb/* 
+          terraform fmt -check modules/lambda/* 
+
+      #----------------------------------------------
+      #  Terraform Init
+      #----------------------------------------------
+      - name: tf init
+        id: tf_init
+        run: |
+          if [ -d "environments/${{ github.ref_name }}/" ]; then
+            cd environments/${{ github.ref_name }}
+            terraform init
+          else
+            for dir in environments/*/
+            do 
+              cd ${dir}   
+              env=${dir%*/}
+              env=${env#*/}
+              echo ""
+              echo "*************** TERRAFORM INIT ******************"
+              echo "***** Running terraform init at environment: ${env} *****"
+              echo "*************************************************"
+              terraform init || exit 1
+              cd ../../
+            done
+          fi
+
+      #----------------------------------------------
+      #  Terraform Plan
+      #----------------------------------------------
+      - name: Terraform Validate
+        id: tf_validate
+        run: terraform validate -no-color
+
+      - name: tf plan
+        id: tf_plan
+        run: |
+          if [ -d "environments/${{ github.ref_name }}/" ]; then
+            cd environments/${{ github.ref_name }}
+            terraform plan -var-file="secret.tfvars"
+          else
+            for dir in environments/*/
+            do 
+              cd ${dir}   
+              env=${dir%*/}
+              env=${env#*/}
+              echo ""
+              echo "*************** TERRAFORM PLAN ******************"
+              echo "***** Running terraform plan at environment: ${env} *****"
+              echo "*************************************************"
+              terraform plan || exit 1
+              cd ../../
+            done
+          fi
+
+      #----------------------------------------------
+      #  Github script to to post issue in PR window
+      #----------------------------------------------
+      - uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.tf_plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.tf_fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.tf_init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.tf_validate.outcome }}\`
+            <details><summary>Validation Output</summary>
+      
+            \`\`\`\n
+            ${{ steps.tf_validate.outputs.stdout }}
+            \`\`\`
+      
+            </details>
+      
+            #### Terraform Plan 📖\`${{ steps.tf_plan.outcome }}\`
+      
+            <details><summary>Show Plan</summary>
+      
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+      
+            </details>
+      
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, BRANCH: \`${{ github.ref_name }}\`, Workflow: \`${{ github.workflow }}\`*`;
+      
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+      
+      #----------------------------------------------
+      #  Terraform Apply
+      #----------------------------------------------
+      - name: Terraform Apply
+        id: tf_apply
+        run: |
+          if [ -d "environments/${{ github.ref_name }}/" ]; then
+            cd environments/${{ github.ref_name }}
+            terraform apply -auto-approve
+          else
+            echo "***************************** SKIPPING APPLYING *******************************"
+            echo "Branch '${{ github.ref_name }}' does not represent an oficial environment." Skip the deployment.
+            echo "*******************************************************************************"
+          fi
+
+
   DeployCodeToS3:
+    if: github.repository == 'timmytandian/remove-me-to-execute-this-job'
     runs-on: ubuntu-latest
     needs: InstallPoetry-RunPytest-BuildLambdaLayer
     steps:
@@ -183,6 +324,7 @@ jobs:
           # Cleanup
           rm -r lambda_env
           rm existing_lambda.zip updated_lambda.zip
+
 
   DeployLambdaLayer:
     runs-on: ubuntu-latest
