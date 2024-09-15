@@ -23,10 +23,12 @@ module "dynamodb" {
   //is_initialize_table_item = false
 }
 
-/*
+
 module "lambda" {
-  source = "../../modules/lambda"
-}*/
+  source                    = "../../modules/lambda"
+  env                       = local.env
+  lambda_code_function_name = "dynamodb-resume_visitor-api_http-counts"
+}
 /*
 module "api_gateway" {
   source = "../../modules/api_gateway"
