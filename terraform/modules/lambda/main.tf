@@ -87,7 +87,7 @@ data "archive_file" "lambda_layer" {
 }
 
 resource "aws_lambda_layer_version" "lambda_layer" {
-  layer_name = "${var.lambda_layer_name}${var.env == "prod" ? "" : "_${var.env}"}"
-  filename   = data.archive_file.lambda_layer.output_path
+  layer_name          = "${var.lambda_layer_name}${var.env == "prod" ? "" : "_${var.env}"}"
+  filename            = data.archive_file.lambda_layer.output_path
   compatible_runtimes = ["python3.11"]
 }
