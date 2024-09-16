@@ -52,6 +52,7 @@ resource "aws_lambda_function" "lambda_code" {
   handler = "lambda_function.lambda_handler"
   runtime = "python3.11"
   role    = aws_iam_role.lambda_code.arn
+  layers  = [aws_lambda_layer_version.dependencies.arn]
 
   environment {
     variables = {
@@ -63,7 +64,7 @@ resource "aws_lambda_function" "lambda_code" {
 ##################################################################
 ## Dependencies Lambda Layer
 ##################################################################
-resource "null_resource" "lambda_layer" {
+resource "null_resource" "dependencies" {
   provisioner "local-exec" {
     command = <<EOT
       cd ${path.module}/../../../
@@ -78,16 +79,17 @@ resource "null_resource" "lambda_layer" {
   }
 }
 
-data "archive_file" "lambda_layer" {
+data "archive_file" "dependencies" {
   type        = "zip"
   output_path = "/tmp/myresume_backend/lambda_layer.zip"
   source_dir  = "${path.module}/../../../aws_layer"
   excludes    = ["*.pyc"]
-  depends_on  = [null_resource.lambda_layer]
+  depends_on  = [null_resource.dependencies]
 }
 
-resource "aws_lambda_layer_version" "lambda_layer" {
+resource "aws_lambda_layer_version" "dependencies" {
   layer_name          = "${var.lambda_layer_name}${var.env == "prod" ? "" : "_${var.env}"}"
-  filename            = data.archive_file.lambda_layer.output_path
+  filename            = data.archive_file.dependencies.output_path
+  description         = "A layer containing all requirements for myresume_backend, managed by terraform dev environment."
   compatible_runtimes = ["python3.11"]
 }
