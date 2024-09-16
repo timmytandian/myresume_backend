@@ -44,7 +44,7 @@ data "archive_file" "lambda_code" {
 }
 
 resource "aws_lambda_function" "lambda_code" {
-  function_name    = "${var.lambda_code_function_name}${var.env == "prod" ? "" : "_${var.env}"}"
+  function_name    = "${var.lambda_code_function_name_base}${var.env == "prod" ? "" : "_${var.env}"}"
   description      = "[main_use, ${var.env}] This function reads and updates DynamoDB cloud_resume table. Connected with API Gateway HTTP API at the front. API route: /counts/{page-id}."
   filename         = data.archive_file.lambda_code.output_path
   source_code_hash = data.archive_file.lambda_code.output_base64sha256
@@ -56,7 +56,7 @@ resource "aws_lambda_function" "lambda_code" {
 
   environment {
     variables = {
-      DYNAMODB_TABLE_NAME = "cloud_resume"
+      DYNAMODB_TABLE_NAME = var.dynamodb_table_name
     }
   }
 }
@@ -88,7 +88,7 @@ data "archive_file" "dependencies" {
 }
 
 resource "aws_lambda_layer_version" "dependencies" {
-  layer_name          = "${var.lambda_layer_name}${var.env == "prod" ? "" : "_${var.env}"}"
+  layer_name          = "${var.lambda_layer_name_base}${var.env == "prod" ? "" : "_${var.env}"}"
   filename            = data.archive_file.dependencies.output_path
   description         = "A layer containing all requirements for myresume_backend, managed by terraform dev environment."
   compatible_runtimes = ["python3.11"]

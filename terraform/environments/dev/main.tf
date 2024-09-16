@@ -17,18 +17,19 @@ provider "aws" {
 
 
 module "dynamodb" {
-  source              = "../../modules/dynamodb"
-  env                 = local.env
-  dyanmodb_table_name = "cloud_resume"
+  source                   = "../../modules/dynamodb"
+  env                      = local.env
+  dyanmodb_table_name_base = "cloud_resume"
   //is_initialize_table_item = false
 }
 
 
 module "lambda" {
-  source                    = "../../modules/lambda"
-  env                       = local.env
-  lambda_code_function_name = "dynamodb-resume_visitor-api_http-counts"
-  lambda_layer_name         = "myresume_backend_layer_from_terraform"
+  source                         = "../../modules/lambda"
+  env                            = local.env
+  lambda_code_function_name_base = "dynamodb-resume_visitor-api_http-counts"
+  lambda_layer_name_base         = "myresume_backend_layer_from_terraform"
+  dynamodb_table_name            = module.dynamodb.dynamodb_table_name
 }
 /*
 module "api_gateway" {

@@ -9,7 +9,7 @@
 
 # DYNAMO DB TABLE
 resource "aws_dynamodb_table" "visitors_count_db" {
-  name                        = "${var.dyanmodb_table_name}${var.env == "prod" ? "" : "_${var.env}"}"
+  name                        = "${var.dyanmodb_table_name_base}${var.env == "prod" ? "" : "_${var.env}"}"
   billing_mode                = "PAY_PER_REQUEST"
   deletion_protection_enabled = true
   hash_key                    = "pkey_uuid"

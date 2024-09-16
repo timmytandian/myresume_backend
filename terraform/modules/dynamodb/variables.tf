@@ -2,7 +2,7 @@
 # REQUIRED PARAMETERS
 # You must provide a value for each of these parameters.
 # ---------------------------------------------------------------------------------------------------------------------
-variable "dyanmodb_table_name" {
+variable "dyanmodb_table_name_base" {
   description = "The name of dynamo db table that holds visitor count"
   type        = string
 }
