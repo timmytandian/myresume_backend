@@ -28,6 +28,7 @@ module "lambda" {
   source                    = "../../modules/lambda"
   env                       = local.env
   lambda_code_function_name = "dynamodb-resume_visitor-api_http-counts"
+  lambda_layer_name         = "myresume_backend_layer_from_terraform"
 }
 /*
 module "api_gateway" {
