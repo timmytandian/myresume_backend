@@ -88,10 +88,24 @@ data "archive_file" "dependencies" {
   depends_on  = [null_resource.dependencies]
 }
 
+# Calculate the content hash using an external data source
+data "external" "dependencies_hash" {
+  program = ["sh", "-c", <<EOT
+    # Calculate the hash of pyproject.toml
+    cd ${path.module}/../../../
+    hash=$(sha256sum pyproject.toml | awk '{print $1}')
+    echo "{\"hash\": \"$hash\"}"
+  EOT
+  ]
+}
+
 resource "aws_lambda_layer_version" "dependencies" {
-  layer_name          = "${var.lambda_layer_name_base}${var.env == "prod" ? "" : "_${var.env}"}"
+  layer_name          = "${var.lambda_layer_name_base}${var.env == "prod" ? "" : "_${var.env}"}_${data.external.dependencies_hash.result["hash"]}"
   filename            = data.archive_file.dependencies.output_path
   description         = "A layer containing all requirements for myresume_backend, managed by terraform dev environment."
   compatible_runtimes = ["python3.11"]
-  source_code_hash    = data.archive_file.dependencies.output_base64sha256
+  
+  lifecycle {
+    create_before_destroy = true
+  }
 }
