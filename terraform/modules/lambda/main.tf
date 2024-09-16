@@ -1,3 +1,6 @@
+##################################################################
+## IAM Role and Permission
+##################################################################
 # Create an IAM role for the Lambda function
 resource "aws_iam_role" "lambda_code" {
   name = "dynamodb-query-myresumevisitors-role-${var.env}"
@@ -27,6 +30,9 @@ resource "aws_iam_role_policy_attachment" "lambda_code_dynamodb" {
   role       = aws_iam_role.lambda_code.name
 }
 
+##################################################################
+## Python code Lambda function
+##################################################################
 data "archive_file" "lambda_code" {
   type        = "zip"
   output_path = "/tmp/myresume_backend/lambda_code.zip"
@@ -52,4 +58,36 @@ resource "aws_lambda_function" "lambda_code" {
       DYNAMODB_TABLE_NAME = "cloud_resume"
     }
   }
+}
+
+##################################################################
+## Dependencies Lambda Layer
+##################################################################
+resource "null_resource" "lambda_layer" {
+  provisioner "local-exec" {
+    command = <<EOT
+      cd ${path.module}/../../../
+      mkdir -p aws_layer/python/lib/python3.11/site-packages
+      poetry export -f requirements.txt --output requirements.txt
+      pip install -r requirements.txt -t aws_layer/python/lib/python3.11/site-packages
+    EOT
+  }
+
+  triggers = {
+    dependencies_versions = filemd5("${path.module}/../../../pyproject.toml")
+  }
+}
+
+data "archive_file" "lambda_layer" {
+  type        = "zip"
+  output_path = "/tmp/myresume_backend/lambda_layer.zip"
+  source_dir  = "${path.module}/../../../aws_layer"
+  excludes    = ["*.pyc"]
+  depends_on  = [null_resource.lambda_layer]
+}
+
+resource "aws_lambda_layer_version" "lambda_layer" {
+  layer_name = "${var.lambda_layer_name}${var.env == "prod" ? "" : "_${var.env}"}"
+  filename   = data.archive_file.lambda_layer.output_path
+  compatible_runtimes = ["python3.11"]
 }
