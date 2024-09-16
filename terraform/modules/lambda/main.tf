@@ -104,7 +104,7 @@ resource "aws_lambda_layer_version" "dependencies" {
   filename            = data.archive_file.dependencies.output_path
   description         = "A layer containing all requirements for myresume_backend, managed by terraform dev environment."
   compatible_runtimes = ["python3.11"]
-  
+
   lifecycle {
     create_before_destroy = true
   }
