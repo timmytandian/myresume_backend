@@ -75,7 +75,8 @@ resource "null_resource" "dependencies" {
   }
 
   triggers = {
-    dependencies_versions = filemd5("${path.module}/../../../pyproject.toml")
+    #dependencies_versions = filemd5("${path.module}/../../../pyproject.toml")
+    always_run = timestamp()
   }
 }
 
@@ -92,4 +93,5 @@ resource "aws_lambda_layer_version" "dependencies" {
   filename            = data.archive_file.dependencies.output_path
   description         = "A layer containing all requirements for myresume_backend, managed by terraform dev environment."
   compatible_runtimes = ["python3.11"]
+  source_code_hash    = data.archive_file.dependencies.output_base64sha256
 }
