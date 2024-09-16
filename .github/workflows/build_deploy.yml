@@ -168,11 +168,11 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
-          
+
       #----------------------------------------------
       #  Terraform Init
       #----------------------------------------------
-      - name: tf init
+      - name: Terraform Init
         id: tf_init
         run: |
           if [ -d "environments/${{ github.ref_name }}/" ]; then
@@ -200,7 +200,7 @@ jobs:
         id: tf_validate
         run: terraform validate -no-color
 
-      - name: tf plan
+      - name: Terraform Plan
         id: tf_plan
         run: |
           if [ -d "environments/${{ github.ref_name }}/" ]; then
