@@ -155,6 +155,21 @@ jobs:
           terraform fmt -check modules/lambda/* 
 
       #----------------------------------------------
+      #  install python & configure poetry
+      #----------------------------------------------
+      - name: Set up python
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+          
+      #----------------------------------------------
       #  Terraform Init
       #----------------------------------------------
       - name: tf init
