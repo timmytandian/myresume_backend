@@ -5,5 +5,5 @@ output "lambda_function_name" {
 
 output "lambda_function_arn" {
   value       = aws_lambda_function.lambda_code.arn
-  description = "The name of Lambda function that can interact with DynamoDB table."
+  description = "The ARN of Lambda function that can interact with DynamoDB table."
 }
