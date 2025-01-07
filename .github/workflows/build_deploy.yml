@@ -344,7 +344,7 @@ jobs:
   DeployLambdaLayer:
     runs-on: ubuntu-latest
     needs: InstallPoetry-RunPytest-BuildLambdaLayer
-    if: ${{ needs.InstallPoetry-RunPytest-BuildLambdaLayer.outputs.is-poetlock-changed == 'true' }}
+    if: ${{ github.repository == 'timmytandian/remove-me-to-execute-this-job' && needs.InstallPoetry-RunPytest-BuildLambdaLayer.outputs.is-poetlock-changed == 'true' }}
     steps:
       #----------------------------------------------
       #  Artifact download, publish to AWS Lambda Layer
