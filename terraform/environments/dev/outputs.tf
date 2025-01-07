@@ -1,3 +1,8 @@
+output "api_gateway_endpoint" {
+  value       = module.api_gateway.api_gateway_endpoint
+  description = "The endpoint URL of the API Gateway."
+}
+
 output "dynamodb_table_name" {
   value       = module.dynamodb.dynamodb_table_name
   description = "The name of DynamoDB table that holds the visitors count."

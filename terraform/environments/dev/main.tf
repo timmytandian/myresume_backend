@@ -31,7 +31,12 @@ module "lambda" {
   lambda_layer_name_base         = "myresume_backend_layer_from_terraform"
   dynamodb_table_name            = module.dynamodb.dynamodb_table_name
 }
-/*
+
 module "api_gateway" {
-  source = "../../modules/api_gateway"
-}*/
+  source               = "../../modules/api_gateway"
+  env                  = local.env
+  lambda_invoke_arn    = module.lambda.lambda_function_invoke_arn
+  lambda_function_name = module.lambda.lambda_function_name
+  api_gw_name_base     = "http-myresumevisitor-dynamodb-api"
+  s3_website_name      = "dev.timmytandian.com" 
+}
