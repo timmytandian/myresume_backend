@@ -3,8 +3,7 @@
 ##################################################################
 # Create an IAM role for the Lambda function
 resource "aws_iam_role" "lambda_code" {
-  name = "dynamodb-query-myresumevisitors-role-${var.env}"
-
+  name = "dynamodb-query-myresumevisitors-role-${var.env == "prod" ? "e5kax67j" : "dev"}"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
