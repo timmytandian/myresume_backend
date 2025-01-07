@@ -1,7 +1,7 @@
 # Use the block below to import the resource from AWS
 # IMPORTANT: after the import procedure finished, the code below should be commented out.
 
-
+/*
 import {
   to = module.lambda.aws_iam_role.lambda_code
   id = "dynamodb-query-myresumevisitors-role-e5kax67j"
@@ -26,3 +26,4 @@ import {
   to = module.lambda.aws_lambda_layer_version.dependencies
   id = "arn:aws:lambda:ap-northeast-1:966337238076:layer:myresume_backend_layer_from_github_action:6"
 }
+*/
