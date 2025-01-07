@@ -17,3 +17,13 @@ output "dynamodb_visit_count" {
   value       = module.dynamodb.dynamodb_visit_count
   description = "The number of visits recorded in DynamoDB table."
 }
+
+output "lambda_function_name" {
+  value       = module.lambda.lambda_function_name
+  description = "The name of Lambda function that can interact with DynamoDB table."
+}
+
+output "lambda_function_arn" {
+  value       = module.lambda.lambda_function_arn
+  description = "The name of Lambda function that can interact with DynamoDB table."
+}
