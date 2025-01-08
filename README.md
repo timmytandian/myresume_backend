@@ -1,5 +1,8 @@
 # myresume_backend
 This repository contains codes for the backend part of the Cloud Resume Challenge, a static website hosted in cloud that showcases my resume. This repository provides the infrastructure and logic to track website visitor counts.
+
+## Architecture Diagram
+
 <img alt="AWS Cloud Resume Diagram" src="./readme_media/aws-cloud-resume-diagram-en.jpg">
 
 ## Code Contents
