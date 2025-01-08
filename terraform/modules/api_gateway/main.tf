@@ -5,7 +5,7 @@ resource "aws_apigatewayv2_api" "resume_visitor_api" {
   description   = "[main_use, ${var.env}] This API Gateway links to Lambda function that can get and update visitor count in my cloud resume."
 
   cors_configuration {
-    allow_origins = ["http://${var.s3_website_name}", "http://www.${var.s3_website_name}"]
+    allow_origins = ["https://${var.s3_website_name}", "https://www.${var.s3_website_name}"]
     allow_methods = ["GET"]
     allow_headers = ["Content-Type", "X-Amz-Date", "Authorization", "X-Api-Key", "X-Amz-Security-Token"]
     max_age       = 300
