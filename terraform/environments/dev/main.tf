@@ -38,5 +38,5 @@ module "api_gateway" {
   lambda_invoke_arn    = module.lambda.lambda_function_invoke_arn
   lambda_function_name = module.lambda.lambda_function_name
   api_gw_name_base     = "http-myresumevisitor-dynamodb-api"
-  s3_website_name      = "dev.timmytandian.com" 
+  s3_website_name      = "dev.resume.timmytandian.com" 
 }
