@@ -22,31 +22,31 @@ The Infrastructure as Code is implemented with Terraform.
 
 ## Directory Structure Overview
 ```
-/myresume_backend
-├── .github
-│   └── workflows
+myresume_backend/
+├── .github/
+│   └── workflows/
 │       └── build_deploy.yml         (Code Content 3-1)
-├── myresume_backend
+├── myresume_backend/
 │   ├── __init__.py
 │   └── lambda_functions.py          (Code Content 2-1)
-├── terraform
-│   ├── environments
-│   │   ├── dev
+├── terraform/
+│   ├── environments/
+│   │   ├── dev/
 │   │   │   ├── main.tf
 │   │   │   └── ...
-│   │   └── prod
+│   │   └── prod/
 │   │       └── main.tf
 │   │       └── ...
-│   └── modules
-│       ├── api_gateway              (Code Content 1-1)
+│   └── modules/
+│       ├── api_gateway/             (Code Content 1-1)
 │       │   └── ...
-│       ├── dynamodb                 (Code Content 1-2)
+│       ├── dynamodb/                (Code Content 1-2)
 │       │   └── ...
-│       └── lambda                   (Code Content 1-3)
+│       └── lambda/                  (Code Content 1-3)
 │           └── ...
-├── tests
-│   ├── events
-│   └── unit
+├── tests/
+│   ├── events/
+│   └── unit/
 │       └── test_lambda_function.py  (Code Content 3-1)
 │
 └── ...(other repo files)
